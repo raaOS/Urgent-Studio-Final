@@ -4,7 +4,9 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-const tiers = [
+type TierName = 'Kaki Lima' | 'UMKM' | 'E-Commerce';
+
+const tiers: { name: TierName; description: string; image: string; hint: string; }[] = [
   {
     name: "Kaki Lima",
     description: "Desain cepat dan terjangkau untuk kebutuhan esensial. Fokus pada kecepatan dan fungsionalitas dasar.",
@@ -26,8 +28,8 @@ const tiers = [
 ];
 
 interface BudgetTiersProps {
-  selectedTier: string;
-  onSelectTier: (tierName: string) => void;
+  selectedTier: TierName;
+  onSelectTier: (tierName: TierName) => void;
 }
 
 export function BudgetTiers({ selectedTier, onSelectTier }: BudgetTiersProps) {
