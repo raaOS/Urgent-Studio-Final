@@ -227,8 +227,8 @@ async function handleMessage(message: any) {
       console.log(`Order ${orderCode} found. Updating document...`);
       
       const result = await safeFirebaseOperation(
-        () => runTransaction(db, async (transaction) => {
-          const orderRef = doc(db, "orders", order.id as string);
+        () => runTransaction(db!, async (transaction) => {
+          const orderRef = doc(db!, "orders", order.id as string);
           transaction.update(orderRef, { 
             telegramChatId: chatId, 
             status: 'Menunggu Pembayaran',
@@ -296,7 +296,7 @@ async function handleMessage(message: any) {
     console.log(`Found order ${orderCode} waiting for payment. Processing proof...`);
     
     const updateResult = await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", orderDoc.id), { 
+      () => updateDoc(doc(db!, "orders", orderDoc.id), { 
         status: 'Menunggu Konfirmasi', 
         updatedAt: new Date() 
       }),
@@ -370,7 +370,7 @@ async function handleMessage(message: any) {
       const nextStatus: OrderStatus = 'Dalam Pengerjaan';
 
       const updateResult = await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", orderId), { 
+        () => updateDoc(doc(db!, "orders", orderId), { 
           status: nextStatus,
           items: itemsToUpdate,
           updatedAt: new Date(),
@@ -484,7 +484,7 @@ async function handleOwnerAction(action: string, order: Order, chatId: number, m
     console.log(`Confirming payment for ${order.orderCode}.`);
     
     const updateResult = await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: 'Menunggu Antrian',
         amountPaid: order.totalAmount,
         updatedAt: new Date(),
@@ -508,7 +508,7 @@ async function handleOwnerAction(action: string, order: Order, chatId: number, m
     console.log(`Rejecting payment for ${order.orderCode}.`);
     
     const updateResult = await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: 'Menunggu Pembayaran', 
         updatedAt: new Date() 
       }),
@@ -535,7 +535,7 @@ async function handleCustomerAction(action: string, order: Order, itemIndexStr: 
 
   if (action === 'approve') {
     await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: 'Selesai',
         items: order.items.map(item => ({ ...item, itemStatus: 'Disetujui' })),
         updatedAt: new Date(),
@@ -578,7 +578,7 @@ async function handleRevisionRequest(order: Order, chatId: number, messageId: nu
 
   if (currentRevisionCount >= maxRevisionLimit) {
     await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: 'G-Meet Terjadwal', 
         updatedAt: new Date() 
       }),
@@ -599,7 +599,7 @@ async function handleRevisionRequest(order: Order, chatId: number, messageId: nu
     );
     
     await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         revisionCount: nextRevisionNumber,
         items: updatedItems,
         updatedAt: new Date(),
@@ -629,7 +629,7 @@ async function handleItemReview(action: string, order: Order, itemIndexStr: stri
   updatedItems[itemIndex].itemStatus = action === 'itemacc' ? 'Disetujui' : 'Revisi';
 
   await safeFirebaseOperation(
-    () => updateDoc(doc(db, "orders", order.id as string), { items: updatedItems, updatedAt: new Date() }),
+    () => updateDoc(doc(db!, "orders", order.id as string), { items: updatedItems, updatedAt: new Date() }),
     `updating item status for order ${order.orderCode}, item ${itemIndex}`
   );
   
@@ -644,7 +644,7 @@ async function handleRevisionConfirmation(order: Order, chatId: number, messageI
   await deleteMessage(chatId, messageId);
 
   await safeFirebaseOperation(
-    () => updateDoc(doc(db, "orders", order.id as string), { status: 'Menunggu Input Revisi', updatedAt: new Date() }),
+    () => updateDoc(doc(db!, "orders", order.id as string), { status: 'Menunggu Input Revisi', updatedAt: new Date() }),
     `setting order ${order.orderCode} to 'Menunggu Input Revisi'`
   );
 
@@ -659,7 +659,7 @@ async function handleRevisionCancellation(order: Order, chatId: number, messageI
   );
   
   await safeFirebaseOperation(
-    () => updateDoc(doc(db, "orders", order.id as string), { items: resetItems, updatedAt: new Date() }),
+    () => updateDoc(doc(db!, "orders", order.id as string), { items: resetItems, updatedAt: new Date() }),
     `resetting revision choices for order ${order.orderCode}`
   );
   
@@ -730,7 +730,7 @@ async function handleOrderCancellation(order: Order, chatId: number, messageId: 
   }
 
   await safeFirebaseOperation(
-    () => updateDoc(doc(db, "orders", order.id as string), { 
+    () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: newStatus, 
         updatedAt: new Date(),
         isCancelled: true 
@@ -800,7 +800,7 @@ async function showRevisionConfirmation(order: Order, chatId: number | string, m
 
   if (itemsToRevise.length === 0) {
     await safeFirebaseOperation(
-      () => updateDoc(doc(db, "orders", order.id as string), { 
+      () => updateDoc(doc(db!, "orders", order.id as string), { 
         status: 'Selesai',
         items: order.items.map(item => ({ ...item, itemStatus: 'Disetujui' })),
         updatedAt: new Date(),
