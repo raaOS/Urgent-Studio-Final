@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, MessageSquare, Briefcase, FileText, CheckCircle, Clock, Hash, Link as LinkIcon, Edit, Dimensions } from 'lucide-react';
+import { ArrowLeft, User, MessageSquare, Briefcase, FileText, CheckCircle, Clock, Hash, Link as LinkIcon, Edit, Ruler } from 'lucide-react';
 import Link from 'next/link';
 import { getOrderByCode } from '@/services/orderService';
 
@@ -98,7 +98,7 @@ export default async function OrderDetailPage({ params }: { params: { orderCode:
                            <div key={itemIndex}>
                                <h4 className="font-bold text-lg font-headline">{item.name} <Badge variant="outline">{item.budgetTier}</Badge></h4>
                                {item.driveLink && <p className="text-sm text-muted-foreground flex items-center gap-2 mt-2"><LinkIcon className="h-4 w-4"/> <a href={item.driveLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{item.driveLink}</a></p>}
-                               {item.dimensions && <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1"><Dimensions className="h-4 w-4"/> {item.dimensions}</p>}
+                               {item.dimensions && <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1"><Ruler className="h-4 w-4"/> {item.dimensions}</p>}
                                <div className="mt-4 space-y-4">
                                 {item.briefs && item.briefs.length > 0 ? item.briefs.map((brief, briefIndex) => (
                                     <div key={briefIndex} className="relative pl-8">

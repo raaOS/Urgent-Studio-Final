@@ -16,14 +16,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    // This is added to address the cross-origin warning in the development environment.
-    allowedDevOrigins: [
-        "http://localhost:3000",
-        "http://localhost:9002",
-        "https://*.cloudworkstations.dev",
-    ],
-  },
   // Vercel Best Practice: Explicitly define public env variables.
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,

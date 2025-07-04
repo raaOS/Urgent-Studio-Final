@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { FileText, Eye, Sparkles, Wand2, Loader2, AlertCircle, CheckCircle, Info, Lightbulb, Send, ListChecks, Link as LinkIcon, Dimensions } from 'lucide-react';
+import { FileText, Eye, Sparkles, Wand2, Loader2, AlertCircle, CheckCircle, Info, Lightbulb, Send, ListChecks, Link as LinkIcon, Ruler } from 'lucide-react';
 import type { Order, OrderItem, OrderItemStatus, OrderStatus, Brief } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { Label } from "@/components/ui/label";
@@ -284,7 +284,7 @@ export default function BriefsClient({
                                       </AccordionTrigger>
                                       <AccordionContent className="p-4 border border-t-0 rounded-md rounded-t-none border-primary/20 bg-primary/5 space-y-4">
                                         {item.driveLink && <p className="text-sm text-muted-foreground flex items-center gap-2"><LinkIcon className="h-4 w-4"/> <a href={item.driveLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{item.driveLink}</a></p>}
-                                        {item.dimensions && <p className="text-sm text-muted-foreground flex items-center gap-2"><Dimensions className="h-4 w-4"/> {item.dimensions}</p>}
+                                        {item.dimensions && <p className="text-sm text-muted-foreground flex items-center gap-2"><Ruler className="h-4 w-4"/> {item.dimensions}</p>}
                                         
                                         {item.briefs && item.briefs.length > 0 ? (
                                             item.briefs.map((brief, briefIndex) => (
