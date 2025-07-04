@@ -1,3 +1,4 @@
+
 'use server';
 import {NextRequest, NextResponse} from 'next/server';
 import {db, isFirebaseConfigured} from '@/lib/firebase';
@@ -456,7 +457,7 @@ async function handleCallbackQuery(callbackQuery: any) {
   const [action, orderCode, itemIndexStr] = data.split('_');
 
   if (isRateLimited(String(fromChatId))) {
-    await answerCallbackQuery(callbackQuery.id, 'Mohon tunggu sebentar...');
+    await answerCallbackQuery(callbackQuery.id, { text: 'Mohon tunggu sebentar...' });
     return;
   }
   
@@ -844,3 +845,5 @@ async function showRevisionConfirmation(order: Order, chatId: number | string, m
     console.error('Failed to show revision confirmation:', error);
   }
 }
+
+    
