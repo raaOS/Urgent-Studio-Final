@@ -29,6 +29,12 @@ function generateOrderCode() {
     return `ORD-${year}${month}${day}-${randomSuffix}`;
 }
 
+const tierToPriceKeyMap: { [key in 'Kaki Lima' | 'UMKM' | 'E-Commerce']: 'kakiLima' | 'umkm' | 'ecommerce' } = {
+    'Kaki Lima': 'kakiLima',
+    'UMKM': 'umkm',
+    'E-Commerce': 'ecommerce',
+};
+
 export default function CheckoutPage() {
     const { cart, cartSubtotal } = useCart();
     const { toast } = useToast();
@@ -154,11 +160,12 @@ export default function CheckoutPage() {
             let priceMismatch = false;
             const validatedCartItems = cart.map(cartItem => {
                 const freshProduct = freshProducts.find(p => p.id === cartItem.product.id);
-                if (!freshProduct || freshProduct.prices[cartItem.budgetTier] !== cartItem.product.price) {
+                const priceKey = tierToPriceKeyMap[cartItem.budgetTier];
+                if (!freshProduct || freshProduct.prices[priceKey] !== cartItem.product.price) {
                     priceMismatch = true;
                 }
                 // Return item with potentially updated price
-                return { ...cartItem, product: { ...cartItem.product, price: freshProduct?.prices[cartItem.budgetTier] || cartItem.product.price } };
+                return { ...cartItem, product: { ...cartItem.product, price: freshProduct?.prices[priceKey] || cartItem.product.price } };
             });
 
             if (priceMismatch) {
