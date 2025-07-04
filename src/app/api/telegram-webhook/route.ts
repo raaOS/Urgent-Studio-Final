@@ -393,11 +393,23 @@ async function handleMessage(message: any) {
         }
       }
     } else {
+      const activeStatuses: OrderStatus[] = [
+        'Menunggu Pembayaran',
+        'Menunggu Konfirmasi',
+        'Menunggu Antrian',
+        'Dalam Pengerjaan',
+        'Menunggu Pengiriman Draf',
+        'Menunggu Respon Klien',
+        'Menunggu Input Revisi',
+        'G-Meet Terjadwal',
+        'Menunggu Approval Upgrade',
+        'Menunggu Revisi Brief',
+      ];
       const anyActiveOrderQuery = query(
-        ordersRef, 
+        ordersRef,
         where("telegramChatId", "==", chatId),
-        where("isCancelled", "!=", true),
-        where("status", "!=", "Selesai"),
+        where("isCancelled", "==", false),
+        where("status", "in", activeStatuses),
         limit(1)
       );
       
