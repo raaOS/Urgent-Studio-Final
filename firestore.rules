@@ -1,0 +1,72 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    // Checks if the user is signed in.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Checks if the user making the request is an Owner or Admin.
+    function isOwnerOrAdmin() {
+      // Access the user's custom claims, which should be set via a secure backend function.
+      // For this app, we check the 'users' collection for the role.
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Owner', 'Admin'];
+    }
+    
+    // Checks if the user is specifically the Owner.
+    function isOwner() {
+        return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Owner';
+    }
+    
+    // --- Collection Rules ---
+
+    // USERS Collection
+    // Users can be read by any admin, but only modified by the Owner.
+    match /users/{userId} {
+      allow read: if isSignedIn() && isOwnerOrAdmin();
+      allow create, update, delete: if isSignedIn() && isOwner();
+    }
+    
+    // PRODUCTS, PROMOS, COUPONS, BANNERS Collections
+    // Public can read, but only Owner/Admin can modify.
+    match /(products|promos|coupons|banners)/{docId} {
+       allow read: if true;
+       allow write: if isSignedIn() && isOwnerOrAdmin();
+    }
+
+    // ORDERS Collection
+    // This is the most sensitive collection.
+    // - Only logged-in users can create orders for themselves.
+    // - Orders can only be read/updated by the user who created it (via Telegram ID logic) or an admin.
+    // In our app, there is no client-side user account, so creation is open but reads/updates are restricted.
+    match /orders/{orderId} {
+        // Allow creation of new orders by anyone (as it's done from the public-facing checkout)
+        allow create: if true; 
+
+        // Allow read/update only by admins/owners.
+        // Client-side access is managed by the Telegram bot's logic, not direct Firestore queries from the user.
+        allow read, update: if isSignedIn() && isOwnerOrAdmin();
+
+        // Only owners can delete order history.
+        allow delete: if isSignedIn() && isOwner();
+    }
+
+    // REFUNDS Collection
+    // Only admins/owners can manage refunds.
+    match /refunds/{refundId} {
+        allow read, write: if isSignedIn() && isOwnerOrAdmin();
+    }
+    
+    // SETTINGS Collection (theme, capacity, etc.)
+    // Only admins/owners can manage settings.
+    match /settings/{settingId} {
+      allow read, write: if isSignedIn() && isOwnerOrAdmin();
+    }
+  }
+}
