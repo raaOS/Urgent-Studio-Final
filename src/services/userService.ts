@@ -36,15 +36,11 @@ export async function getUsers(): Promise<User[]> {
     const userSnapshot = await getDocs(usersCollection);
 
     if (userSnapshot.empty) {
-      console.log("No users found in database. The panel will not show user data until a user is created or the default one is added.");
-       const defaultOwner: Omit<User, 'id'> = {
-            name: "Admin Owner",
-            email: "owner@artisant.com",
-            role: "Owner",
-            avatar: "https://placehold.co/100x100.png",
-        };
-        const newUser = await addUser(defaultOwner);
-        return [newUser];
+      // NOTE: For a real production app, the first user (Owner) should be created
+      // securely, for example via a dedicated setup script or directly in the Firebase Console.
+      // Automatically creating a user here during a read operation is not a safe practice.
+      console.log("No users found in database. The panel will not show user data until a user is created.");
+      return [];
     }
     
     return userSnapshot.docs.map(toUser);

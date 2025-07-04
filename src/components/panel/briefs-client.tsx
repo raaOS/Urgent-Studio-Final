@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -10,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { FileText, Eye, Sparkles, Wand2, Loader2, AlertCircle, CheckCircle, Info, Lightbulb, Send, ListChecks } from 'lucide-react';
-import type { Order, OrderItem, OrderItemStatus, OrderStatus } from "@/lib/types";
+import { FileText, Eye, Sparkles, Wand2, Loader2, AlertCircle, CheckCircle, Info, Lightbulb, Send, ListChecks, Link as LinkIcon, Dimensions } from 'lucide-react';
+import type { Order, OrderItem, OrderItemStatus, OrderStatus, Brief } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { Label } from "@/components/ui/label";
 import { Separator } from '@/components/ui/separator';
@@ -97,12 +96,12 @@ export default function BriefsClient({
   };
   
   const handleAnalyzeBrief = async (item: OrderItem, index: number) => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !item.briefs || item.briefs.length === 0) return;
     setIsAnalyzing(index);
     setAnalysisResults(prev => ({ ...prev, [index]: null }));
     try {
         const result = await analyzeBriefComplexity({ 
-            designBrief: item.brief,
+            designBrief: item.briefs[0].content, // Analyze the initial brief
             driveLink: item.driveLink,
             budgetTier: item.budgetTier,
         });
@@ -122,11 +121,13 @@ export default function BriefsClient({
   };
 
   const handleGenerateIdeas = async (item: OrderItem, index: number) => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !item.briefs || item.briefs.length === 0) return;
     setIsGeneratingIdeas(index);
     setCreativeIdeas(prev => ({ ...prev, [index]: null }));
     try {
-        const result = await extractDesignElements({ designBrief: item.brief });
+        // Use the latest brief for creative ideas
+        const latestBrief = item.briefs[item.briefs.length - 1].content;
+        const result = await extractDesignElements({ designBrief: latestBrief });
         setCreativeIdeas(prev => ({ ...prev, [index]: result }));
         toast({ title: "Ide Kreatif Dihasilkan!", description: `AI telah memberikan saran untuk ${item.name}.` });
     } catch (error) {
@@ -282,22 +283,28 @@ export default function BriefsClient({
                                         </div>
                                       </AccordionTrigger>
                                       <AccordionContent className="p-4 border border-t-0 rounded-md rounded-t-none border-primary/20 bg-primary/5 space-y-4">
-                                        <div>
-                                          <h4 className='font-semibold text-sm mb-1'>Brief Klien:</h4>
-                                          <p className="text-sm whitespace-pre-wrap">{item.brief || "Tidak ada brief untuk item ini."}</p>
-                                          {item.driveLink && (
-                                              <div className="mt-2">
-                                                  <p className="font-semibold text-sm">Link Referensi:</p>
-                                                  <a href={item.driveLink} target="_blank" rel="noopener noreferrer" className="text-primary text-sm break-all hover:underline">{item.driveLink}</a>
-                                              </div>
-                                          )}
-                                          {item.dimensions && (
-                                              <div className="mt-2">
-                                                  <p className="font-semibold text-sm">Ukuran:</p>
-                                                  <p className="text-sm">{item.dimensions}</p>
-                                              </div>
-                                          )}
-                                        </div>
+                                        {item.driveLink && <p className="text-sm text-muted-foreground flex items-center gap-2"><LinkIcon className="h-4 w-4"/> <a href={item.driveLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">{item.driveLink}</a></p>}
+                                        {item.dimensions && <p className="text-sm text-muted-foreground flex items-center gap-2"><Dimensions className="h-4 w-4"/> {item.dimensions}</p>}
+                                        
+                                        {item.briefs && item.briefs.length > 0 ? (
+                                            item.briefs.map((brief, briefIndex) => (
+                                            <div key={briefIndex} className="relative pl-6">
+                                                <div className="absolute left-0 flex flex-col items-center">
+                                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/20 text-primary text-xs font-bold">
+                                                        {brief.revisionNumber === 0 ? 'B' : `R${brief.revisionNumber}`}
+                                                    </span>
+                                                    {item.briefs && briefIndex < item.briefs.length -1 && <div className="h-full w-px bg-border my-1"></div>}
+                                                </div>
+                                                <p className="font-semibold text-sm">
+                                                    {brief.revisionNumber === 0 ? 'Brief Awal' : `Revisi ke-${brief.revisionNumber}`}
+                                                    <span className="text-muted-foreground font-normal ml-2 text-xs">{brief.timestamp ? new Date(brief.timestamp).toLocaleString('id-ID') : ''}</span>
+                                                </p>
+                                                <p className="text-sm whitespace-pre-wrap mt-1">{brief.content}</p>
+                                            </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-muted-foreground text-sm">Tidak ada brief untuk item ini.</p>
+                                        )}
                                       </AccordionContent>
                                     </AccordionItem>
                                   ))}
@@ -348,7 +355,7 @@ export default function BriefsClient({
                                           <AccordionContent className="p-4 border border-t-0 rounded-b-md space-y-4">
                                             <Button size="sm" className='w-full' onClick={() => handleGenerateIdeas(item, index)} disabled={isGeneratingIdeas === index}>
                                                 {isGeneratingIdeas === index ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                                Dapatkan Ide untuk Item Ini
+                                                Dapatkan Ide (dari brief terbaru)
                                             </Button>
                                             {isGeneratingIdeas === index && <p className="text-sm text-muted-foreground animate-pulse flex items-center"><Loader2 className="h-4 w-4 mr-2 animate-spin"/>Menghasilkan ide kreatif...</p>}
                                             {creativeIdeas[index] && (
@@ -380,8 +387,8 @@ export default function BriefsClient({
                             )}
                              <Card>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center"><Sparkles className="inline-block mr-2 h-5 w-5 text-accent"/>Analisis Kesesuaian Brief</CardTitle>
-                                    <CardDescription>Pilih item di bawah untuk menganalisis kesesuaian brief dengan tier budgetnya.</CardDescription>
+                                    <CardTitle className="flex items-center"><Sparkles className="inline-block mr-2 h-5 w-5 text-accent"/>Analisis Kesesuaian Brief Awal</CardTitle>
+                                    <CardDescription>Pilih item di bawah untuk menganalisis kesesuaian brief awal dengan tier budgetnya.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <Accordion type="single" collapsible className="w-full space-y-2">
