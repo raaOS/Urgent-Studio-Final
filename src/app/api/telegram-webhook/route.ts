@@ -451,293 +451,304 @@ async function handleCallbackQuery(callbackQuery: any) {
   const message = callbackQuery.message;
   const fromChatId = Number(message.chat.id);
   const messageId = message.message_id;
-  const data = callbackQuery.data;
+  const data: string = callbackQuery.data;
   
-  const dataParts = data.split('_');
-  if (dataParts.length < 2) {
-    console.error('Invalid callback data format:', data);
-    await answerCallbackQuery(callbackQuery.id);
-    return;
-  }
-  
-  const [action, orderCode, itemIndexStr] = dataParts;
+  const [action, orderCode, itemIndexStr] = data.split('_');
 
   if (isRateLimited(String(fromChatId))) {
     await answerCallbackQuery(callbackQuery.id, 'Mohon tunggu sebentar...');
     return;
   }
-
-  try {
-    await answerCallbackQuery(callbackQuery.id);
-  } catch (error) {
-    console.error('Failed to answer callback query:', error);
-  }
+  
+  await answerCallbackQuery(callbackQuery.id);
 
   const order = await getOrderByCode(orderCode);
   if (!order || !order.id) {
     console.error(`Callback error: Order ${orderCode} not found.`);
-    try {
-      await editMessageText(fromChatId, messageId, `Error: Pesanan ${orderCode} tidak ditemukan.`);
-    } catch (error) {
-      console.error('Failed to edit message with error:', error);
-    }
+    await editMessageText(fromChatId, messageId, `Error: Pesanan ${orderCode} tidak ditemukan.`);
     return;
   }
   
-  const customerChatId = order.telegramChatId;
-  
   if (String(fromChatId) === OWNER_CHAT_ID) {
-    const originalCaption = message.caption || '';
+    await handleOwnerAction(action, order, fromChatId, messageId, message.caption);
+  } else if (order.telegramChatId && fromChatId === order.telegramChatId) {
+    await handleCustomerAction(action, order, itemIndexStr, fromChatId, messageId);
+  }
+}
+
+// --- Logika Aksi untuk Owner ---
+async function handleOwnerAction(action: string, order: Order, chatId: number, messageId: number, originalCaption: string) {
+  if (!order.id) return;
+  
+  if (action === 'confirm') {
+    console.log(`Confirming payment for ${order.orderCode}.`);
     
-    if (action === 'confirm') {
-      console.log(`Confirming payment for ${orderCode}.`);
-      
-      const updateResult = await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { 
-          status: 'Menunggu Antrian',
-          amountPaid: order.totalAmount,
-          updatedAt: new Date(),
-        }),
-        `confirming payment for order ${orderCode}`
-      );
+    const updateResult = await safeFirebaseOperation(
+      () => updateDoc(doc(db, "orders", order.id as string), { 
+        status: 'Menunggu Antrian',
+        amountPaid: order.totalAmount,
+        updatedAt: new Date(),
+      }),
+      `confirming payment for order ${order.orderCode}`
+    );
 
-      if (updateResult === null) {
-        await editMessageText(fromChatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Gagal dikonfirmasi (error sistem)* ---`, { reply_markup: null });
-        return;
-      }
-      
-      await editMessageText(fromChatId, messageId, `${originalCaption}\n\n--- *Status: ✅ Dikonfirmasi* ---`, { reply_markup: null });
-      
-      if (customerChatId) {
-        try {
-          const confirmationText = `🎉 *Pembayaran Dikonfirmasi!*\n\nPesanan Anda *${orderCode}* telah kami terima dan sekarang masuk dalam antrian desain. Tim kami akan segera menghubungi Anda jika ada update.`;
-          await sendMessage(customerChatId, confirmationText);
-        } catch (error) {
-          console.error('Failed to send confirmation to customer:', error);
-        }
-      }
-
-    } else if (action === 'reject') {
-      console.log(`Rejecting payment for ${orderCode}.`);
-      
-      const updateResult = await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { 
-          status: 'Menunggu Pembayaran', 
-          updatedAt: new Date() 
-        }),
-        `rejecting payment for order ${orderCode}`
-      );
-
-      if (updateResult === null) {
-        await editMessageText(fromChatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Gagal ditolak (error sistem)* ---`, { reply_markup: null });
-        return;
-      }
-      
-      await editMessageText(fromChatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Ditolak* ---`, { reply_markup: null });
-      
-      if (customerChatId) {
-        try {
-          const rejectionText = `❗️ *Pembayaran Ditolak*\n\nMohon maaf, terjadi masalah dengan konfirmasi pembayaran untuk pesanan *${orderCode}*. Silakan kirim ulang bukti transfer yang valid atau hubungi admin untuk informasi lebih lanjut.`;
-          await sendMessage(customerChatId, rejectionText);
-        } catch (error) {
-          console.error('Failed to send rejection to customer:', error);
-        }
-      }
+    if (updateResult === null) {
+      await editMessageText(chatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Gagal dikonfirmasi (error sistem)* ---`, { reply_markup: null });
+      return;
     }
     
-  } else if (customerChatId && fromChatId === customerChatId) {
+    await editMessageText(chatId, messageId, `${originalCaption}\n\n--- *Status: ✅ Dikonfirmasi* ---`, { reply_markup: null });
     
-    if (action === 'approve') {
-      const updateResult = await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { 
-          status: 'Selesai',
-          items: order.items.map(item => ({ ...item, itemStatus: 'Disetujui' })),
-          updatedAt: new Date(),
-        }),
-        `approving order ${orderCode}`
-      );
+    if (order.telegramChatId) {
+      const confirmationText = `🎉 *Pembayaran Dikonfirmasi!*\n\nPesanan Anda *${order.orderCode}* telah kami terima dan sekarang masuk dalam antrian desain. Tim kami akan segera menghubungi Anda jika ada update.`;
+      await sendMessage(order.telegramChatId, confirmationText);
+    }
 
-      if (updateResult === null) {
-        await editMessageText(fromChatId, messageId, "❌ Terjadi kesalahan saat menyetujui desain. Mohon coba lagi.");
-        return;
-      }
-
-      await editMessageText(fromChatId, messageId, "✅ Desain telah Anda setujui.");
-      await sendMessage(fromChatId, `Terima kasih atas konfirmasinya! Pesanan *${orderCode}* telah selesai. Berikut adalah link Google Drive untuk mengunduh semua file Anda:\n\n${order.driveFolderUrl || '(Link akan diberikan admin secara manual)'}`);
+  } else if (action === 'reject') {
+    console.log(`Rejecting payment for ${order.orderCode}.`);
     
-    } else if (action === 'revision') {
-      const itemsNeedingReview = order.items.filter(item => item.itemStatus !== 'Disetujui');
-      const maxRevisionLimit = Math.max(...itemsNeedingReview.map(item => {
-        if (item.budgetTier === 'Kaki Lima') return 1;
-        if (item.budgetTier === 'UMKM') return 2;
-        return 3;
-      }));
-      const currentRevisionCount = order.revisionCount || 0;
+    const updateResult = await safeFirebaseOperation(
+      () => updateDoc(doc(db, "orders", order.id as string), { 
+        status: 'Menunggu Pembayaran', 
+        updatedAt: new Date() 
+      }),
+      `rejecting payment for order ${order.orderCode}`
+    );
 
-      if (currentRevisionCount >= maxRevisionLimit) {
-        await safeFirebaseOperation(
-          () => updateDoc(doc(db, "orders", order.id as string), { 
-            status: 'G-Meet Terjadwal', 
-            updatedAt: new Date() 
-          }),
-          `scheduling gmeet for order ${orderCode}`
-        );
-
-        await editMessageText(fromChatId, messageId, "Anda telah mencapai batas revisi via teks.");
-        const gmeetCustomerMessage = `Karena sudah mencapai batas revisi, kami mengundang Anda untuk sesi revisi langsung via Google Meet agar lebih efektif. *Admin kami akan segera menghubungi Anda secara pribadi di chat ini untuk mengatur jadwal.* Mohon ditunggu ya.`;
-        await sendMessage(fromChatId, gmeetCustomerMessage);
-
-        if (OWNER_CHAT_ID) {
-          await sendMessage(OWNER_CHAT_ID, `❗️ *Perlu Penjadwalan G-Meet*\n\nPesanan *${order.orderCode}* (${order.customerName}) telah mencapai batas revisi. Harap segera hubungi pelanggan untuk mengatur jadwal G-Meet.`);
-        }
-      } else {
-        const nextRevisionNumber = currentRevisionCount + 1;
-        const updatedItems = order.items.map(item =>
-          item.itemStatus !== 'Disetujui' ? { ...item, itemStatus: 'Menunggu Respon Klien' as const } : item
-        );
-        
-        await safeFirebaseOperation(
-          () => updateDoc(doc(db, "orders", order.id as string), { 
-            revisionCount: nextRevisionNumber,
-            items: updatedItems,
-            updatedAt: new Date(),
-          }),
-          `starting revision for order ${orderCode}`
-        );
-        
-        await editMessageText(fromChatId, messageId, "✍️ Permintaan revisi diterima. Mari kita ulas setiap item.");
-        
-        const finalOrderState = await getOrderByCode(orderCode);
-        if (finalOrderState) {
-          await askAboutNextItem(finalOrderState, fromChatId, messageId);
-        }
-      }
-      
-    } else if (action === 'itemacc' || action === 'itemrev') {
-      const itemIndex = parseInt(itemIndexStr, 10);
-      
-      if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= order.items.length) {
-        await editMessageText(fromChatId, messageId, "❌ Item tidak valid. Mohon mulai ulang proses.");
-        return;
-      }
-
-      const updatedItems = [...order.items];
-      updatedItems[itemIndex].itemStatus = action === 'itemacc' ? 'Disetujui' : 'Revisi';
-
-      await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { items: updatedItems, updatedAt: new Date() }),
-        `updating item status for order ${orderCode}, item ${itemIndex}`
-      );
-      
-      const updatedOrder = await getOrderByCode(orderCode);
-      if (updatedOrder) {
-        await askAboutNextItem(updatedOrder, fromChatId, messageId);
-      }
-
-    } else if (action === 'confirmrev') {
-      await deleteMessage(fromChatId, messageId);
-
-      await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { status: 'Menunggu Input Revisi', updatedAt: new Date() }),
-        `setting order ${orderCode} to 'Menunggu Input Revisi'`
-      );
-
-      const revisionInstruction = `❗️ *PERHATIAN, INI PENTING* ❗️\n\nJatah revisi Anda berlaku per *PUTARAN*, bukan per item.\n\nHarap tuliskan *SEMUA POIN REVISI* untuk item yang telah Anda tandai dalam *SATU PESAN SEKALIGUS*.\n\nSebutkan nama itemnya agar jelas, contoh:\n"LOGO: ganti warna jadi biru. KARTU NAMA: nomor teleponnya salah."\n\n---\n*PENTING:* Item yang tidak Anda sebutkan dalam pesan revisi ini akan *OTOMATIS KAMI ANGGAP DISETUJUI (ACC)* dan *TIDAK DAPAT DIREVISI LAGI* di putaran berikutnya.`;
-      await sendMessage(fromChatId, revisionInstruction);
-      
-    } else if (action === 'cancelrev') {
-      const resetItems = order.items.map(item =>
-        item.itemStatus !== 'Disetujui' ? { ...item, itemStatus: 'Menunggu Respon Klien' as const } : item
-      );
-      
-      await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { items: resetItems, updatedAt: new Date() }),
-        `resetting revision choices for order ${orderCode}`
-      );
-      
-      const updatedOrder = await getOrderByCode(orderCode);
-      if (updatedOrder) {
-        await askAboutNextItem(updatedOrder, fromChatId, messageId);
-      }
-      
-    } else if (action === 'cancel') {
-      const preDesignStatuses: OrderStatus[] = ['Menunggu Antrian', 'Dalam Pengerjaan'];
-      const isPreDesign = preDesignStatuses.includes(order.status);
-      
-      let newStatus: OrderStatus;
-      let refundReason = '';
-      let customerMessage = '';
-      let finalRefundAmount = 0;
-
-      if (isPreDesign) {
-        const penaltyPercentage = 0.10;
-        const penaltyAmount = order.totalAmount * penaltyPercentage;
-        refundReason = `Dibatalkan oleh pelanggan sebelum desain dikirim (potongan biaya administrasi ${penaltyPercentage * 100}% dari total tagihan).`;
-        
-        if (order.paymentMethod === 'LUNAS') {
-            newStatus = 'Dibatalkan (Refund Pra-Lunas)';
-            finalRefundAmount = Math.max(0, order.totalAmount - penaltyAmount);
-        } else {
-            newStatus = 'Dibatalkan (Refund Pra-DP)';
-            finalRefundAmount = Math.max(0, order.amountPaid - penaltyAmount);
-        }
-        customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, pembatalan pra-desain dikenakan *biaya administrasi 10% dari total tagihan*.\n\nAdmin kami akan segera menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}*.`;
-
-      } else {
-        if (order.paymentMethod === 'LUNAS') {
-            newStatus = 'Dibatalkan (Refund Pasca-Lunas)';
-            const penaltyPercentage = 0.50;
-            const penaltyAmount = order.totalAmount * penaltyPercentage;
-            finalRefundAmount = Math.max(0, order.totalAmount - penaltyAmount);
-            refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (potongan biaya pengerjaan ${penaltyPercentage * 100}% dari total tagihan).`;
-            customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, dikenakan *potongan biaya pengerjaan 50% dari total tagihan*.\n\nAdmin kami akan segera menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}*.`;
-        } else {
-            newStatus = 'Dibatalkan (Refund Pasca-DP)';
-            const penaltyAmount = order.totalAmount * 0.50; 
-            finalRefundAmount = Math.max(0, order.amountPaid - penaltyAmount);
-            
-            if (finalRefundAmount > 0) {
-                refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (potongan 50% dari total tagihan). Sebagian DP dikembalikan.`;
-                customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, dikenakan *potongan biaya pengerjaan 50% dari total tagihan*. Admin kami akan menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}* dari DP yang telah Anda bayarkan.`;
-            } else {
-                refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (DP hangus untuk menutupi biaya pengerjaan).`;
-                customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, seluruh DP Anda (Rp${order.amountPaid.toLocaleString('id-ID')}) digunakan untuk menutupi biaya pengerjaan yang telah dilakukan. Tidak ada pengembalian dana yang dapat diproses.`;
-            }
-        }
-      }
-      
-      if (finalRefundAmount > 0) {
-        await safeFirebaseOperation(
-          () => addRefund({
-              orderCode: order.orderCode,
-              refundAmount: finalRefundAmount,
-              reason: refundReason,
-              processedBy: 'System Bot',
-              processedAt: new Date()
-          }),
-          `adding refund record for order ${order.orderCode}`
-        );
-      }
-
-      await safeFirebaseOperation(
-        () => updateDoc(doc(db, "orders", order.id as string), { 
-            status: newStatus, 
-            updatedAt: new Date(),
-            isCancelled: true 
-        }),
-        `cancelling order ${order.orderCode}`
-      );
-
-      await editMessageText(fromChatId, messageId, "❌ Pesanan telah dibatalkan.");
-      await sendMessage(fromChatId, customerMessage);
-      
-      if (OWNER_CHAT_ID) {
-          const ownerMessage = `❗️ *Permintaan Pembatalan & Refund*\n\nPelanggan *${order.customerName}* (${order.customerTelegram}) telah membatalkan pesanan *${order.orderCode}*.\n\n*Status Order:* ${newStatus}\n*Alasan:* ${refundReason}\n*Total Refund:* *Rp${finalRefundAmount.toLocaleString('id-ID')}*\n\nMohon segera proses pengembalian dana (jika ada) dan konfirmasi ke pelanggan.`;
-          await sendMessage(OWNER_CHAT_ID, ownerMessage);
-      }
+    if (updateResult === null) {
+      await editMessageText(chatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Gagal ditolak (error sistem)* ---`, { reply_markup: null });
+      return;
+    }
+    
+    await editMessageText(chatId, messageId, `${originalCaption}\n\n--- *Status: ❌ Ditolak* ---`, { reply_markup: null });
+    
+    if (order.telegramChatId) {
+      const rejectionText = `❗️ *Pembayaran Ditolak*\n\nMohon maaf, terjadi masalah dengan konfirmasi pembayaran untuk pesanan *${order.orderCode}*. Silakan kirim ulang bukti transfer yang valid atau hubungi admin untuk informasi lebih lanjut.`;
+      await sendMessage(order.telegramChatId, rejectionText);
     }
   }
 }
+
+// --- Logika Aksi untuk Pelanggan ---
+async function handleCustomerAction(action: string, order: Order, itemIndexStr: string, chatId: number, messageId: number) {
+  if (!order.id) return;
+
+  if (action === 'approve') {
+    await safeFirebaseOperation(
+      () => updateDoc(doc(db, "orders", order.id as string), { 
+        status: 'Selesai',
+        items: order.items.map(item => ({ ...item, itemStatus: 'Disetujui' })),
+        updatedAt: new Date(),
+      }),
+      `approving order ${order.orderCode}`
+    );
+
+    await editMessageText(chatId, messageId, "✅ Desain telah Anda setujui.");
+    await sendMessage(chatId, `Terima kasih atas konfirmasinya! Pesanan *${order.orderCode}* telah selesai. Berikut adalah link Google Drive untuk mengunduh semua file Anda:\n\n${order.driveFolderUrl || '(Link akan diberikan admin secara manual)'}`);
+  
+  } else if (action === 'revision') {
+    await handleRevisionRequest(order, chatId, messageId);
+    
+  } else if (action === 'itemacc' || action === 'itemrev') {
+    await handleItemReview(action, order, itemIndexStr, chatId, messageId);
+
+  } else if (action === 'confirmrev') {
+    await handleRevisionConfirmation(order, chatId, messageId);
+      
+  } else if (action === 'cancelrev') {
+    await handleRevisionCancellation(order, chatId, messageId);
+      
+  } else if (action === 'cancel') {
+    await handleOrderCancellation(order, chatId, messageId);
+  }
+}
+
+
+// --- Sub-handler untuk Aksi Pelanggan ---
+
+async function handleRevisionRequest(order: Order, chatId: number, messageId: number) {
+  if (!order.id) return;
+  const itemsNeedingReview = order.items.filter(item => item.itemStatus !== 'Disetujui');
+  const maxRevisionLimit = Math.max(...itemsNeedingReview.map(item => {
+    if (item.budgetTier === 'Kaki Lima') return 1;
+    if (item.budgetTier === 'UMKM') return 2;
+    return 3;
+  }));
+  const currentRevisionCount = order.revisionCount || 0;
+
+  if (currentRevisionCount >= maxRevisionLimit) {
+    await safeFirebaseOperation(
+      () => updateDoc(doc(db, "orders", order.id as string), { 
+        status: 'G-Meet Terjadwal', 
+        updatedAt: new Date() 
+      }),
+      `scheduling gmeet for order ${order.orderCode}`
+    );
+
+    await editMessageText(chatId, messageId, "Anda telah mencapai batas revisi via teks.");
+    const gmeetCustomerMessage = `Karena sudah mencapai batas revisi, kami mengundang Anda untuk sesi revisi langsung via Google Meet agar lebih efektif. *Admin kami akan segera menghubungi Anda secara pribadi di chat ini untuk mengatur jadwal.* Mohon ditunggu ya.`;
+    await sendMessage(chatId, gmeetCustomerMessage);
+
+    if (OWNER_CHAT_ID) {
+      await sendMessage(OWNER_CHAT_ID, `❗️ *Perlu Penjadwalan G-Meet*\n\nPesanan *${order.orderCode}* (${order.customerName}) telah mencapai batas revisi. Harap segera hubungi pelanggan untuk mengatur jadwal G-Meet.`);
+    }
+  } else {
+    const nextRevisionNumber = currentRevisionCount + 1;
+    const updatedItems = order.items.map(item =>
+      item.itemStatus !== 'Disetujui' ? { ...item, itemStatus: 'Menunggu Respon Klien' as const } : item
+    );
+    
+    await safeFirebaseOperation(
+      () => updateDoc(doc(db, "orders", order.id as string), { 
+        revisionCount: nextRevisionNumber,
+        items: updatedItems,
+        updatedAt: new Date(),
+      }),
+      `starting revision for order ${order.orderCode}`
+    );
+    
+    await editMessageText(chatId, messageId, "✍️ Permintaan revisi diterima. Mari kita ulas setiap item.");
+    
+    const finalOrderState = await getOrderByCode(order.orderCode);
+    if (finalOrderState) {
+      await askAboutNextItem(finalOrderState, chatId, messageId);
+    }
+  }
+}
+
+async function handleItemReview(action: string, order: Order, itemIndexStr: string, chatId: number, messageId: number) {
+  if (!order.id) return;
+  const itemIndex = parseInt(itemIndexStr, 10);
+  
+  if (isNaN(itemIndex) || itemIndex < 0 || itemIndex >= order.items.length) {
+    await editMessageText(chatId, messageId, "❌ Item tidak valid. Mohon mulai ulang proses.");
+    return;
+  }
+
+  const updatedItems = [...order.items];
+  updatedItems[itemIndex].itemStatus = action === 'itemacc' ? 'Disetujui' : 'Revisi';
+
+  await safeFirebaseOperation(
+    () => updateDoc(doc(db, "orders", order.id as string), { items: updatedItems, updatedAt: new Date() }),
+    `updating item status for order ${order.orderCode}, item ${itemIndex}`
+  );
+  
+  const updatedOrder = await getOrderByCode(order.orderCode);
+  if (updatedOrder) {
+    await askAboutNextItem(updatedOrder, chatId, messageId);
+  }
+}
+
+async function handleRevisionConfirmation(order: Order, chatId: number, messageId: number) {
+  if (!order.id) return;
+  await deleteMessage(chatId, messageId);
+
+  await safeFirebaseOperation(
+    () => updateDoc(doc(db, "orders", order.id as string), { status: 'Menunggu Input Revisi', updatedAt: new Date() }),
+    `setting order ${order.orderCode} to 'Menunggu Input Revisi'`
+  );
+
+  const revisionInstruction = `❗️ *PERHATIAN, INI PENTING* ❗️\n\nJatah revisi Anda berlaku per *PUTARAN*, bukan per item.\n\nHarap tuliskan *SEMUA POIN REVISI* untuk item yang telah Anda tandai dalam *SATU PESAN SEKALIGUS*.\n\nSebutkan nama itemnya agar jelas, contoh:\n"LOGO: ganti warna jadi biru. KARTU NAMA: nomor teleponnya salah."\n\n---\n*PENTING:* Item yang tidak Anda sebutkan dalam pesan revisi ini akan *OTOMATIS KAMI ANGGAP DISETUJUI (ACC)* dan *TIDAK DAPAT DIREVISI LAGI* di putaran berikutnya.`;
+  await sendMessage(chatId, revisionInstruction);
+}
+
+async function handleRevisionCancellation(order: Order, chatId: number, messageId: number) {
+  if (!order.id) return;
+  const resetItems = order.items.map(item =>
+    item.itemStatus !== 'Disetujui' ? { ...item, itemStatus: 'Menunggu Respon Klien' as const } : item
+  );
+  
+  await safeFirebaseOperation(
+    () => updateDoc(doc(db, "orders", order.id as string), { items: resetItems, updatedAt: new Date() }),
+    `resetting revision choices for order ${order.orderCode}`
+  );
+  
+  const updatedOrder = await getOrderByCode(order.orderCode);
+  if (updatedOrder) {
+    await askAboutNextItem(updatedOrder, chatId, messageId);
+  }
+}
+
+async function handleOrderCancellation(order: Order, chatId: number, messageId: number) {
+  if (!order.id) return;
+  const preDesignStatuses: OrderStatus[] = ['Menunggu Antrian', 'Dalam Pengerjaan'];
+  const isPreDesign = preDesignStatuses.includes(order.status);
+  
+  let newStatus: OrderStatus;
+  let refundReason = '';
+  let customerMessage = '';
+  let finalRefundAmount = 0;
+
+  if (isPreDesign) {
+    const penaltyPercentage = 0.10;
+    const penaltyAmount = order.totalAmount * penaltyPercentage;
+    refundReason = `Dibatalkan oleh pelanggan sebelum desain dikirim (potongan biaya administrasi ${penaltyPercentage * 100}% dari total tagihan).`;
+    
+    if (order.paymentMethod === 'LUNAS') {
+        newStatus = 'Dibatalkan (Refund Pra-Lunas)';
+        finalRefundAmount = Math.max(0, order.totalAmount - penaltyAmount);
+    } else {
+        newStatus = 'Dibatalkan (Refund Pra-DP)';
+        finalRefundAmount = Math.max(0, order.amountPaid - penaltyAmount);
+    }
+    customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, pembatalan pra-desain dikenakan *biaya administrasi 10% dari total tagihan*.\n\nAdmin kami akan segera menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}*.`;
+
+  } else {
+    if (order.paymentMethod === 'LUNAS') {
+        newStatus = 'Dibatalkan (Refund Pasca-Lunas)';
+        const penaltyPercentage = 0.50;
+        const penaltyAmount = order.totalAmount * penaltyPercentage;
+        finalRefundAmount = Math.max(0, order.totalAmount - penaltyAmount);
+        refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (potongan biaya pengerjaan ${penaltyPercentage * 100}% dari total tagihan).`;
+        customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, dikenakan *potongan biaya pengerjaan 50% dari total tagihan*.\n\nAdmin kami akan segera menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}*.`;
+    } else {
+        newStatus = 'Dibatalkan (Refund Pasca-DP)';
+        const penaltyAmount = order.totalAmount * 0.50; 
+        finalRefundAmount = Math.max(0, order.amountPaid - penaltyAmount);
+        
+        if (finalRefundAmount > 0) {
+            refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (potongan 50% dari total tagihan). Sebagian DP dikembalikan.`;
+            customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, dikenakan *potongan biaya pengerjaan 50% dari total tagihan*. Admin kami akan menghubungi Anda untuk memproses pengembalian dana sebesar *Rp${finalRefundAmount.toLocaleString('id-ID')}* dari DP yang telah Anda bayarkan.`;
+        } else {
+            refundReason = `Dibatalkan oleh pelanggan setelah desain dikirim (DP hangus untuk menutupi biaya pengerjaan).`;
+            customerMessage = `Kami telah menerima permintaan pembatalan Anda untuk pesanan *${order.orderCode}*.\n\nSesuai kebijakan, karena desain telah dikirim, seluruh DP Anda (Rp${order.amountPaid.toLocaleString('id-ID')}) digunakan untuk menutupi biaya pengerjaan yang telah dilakukan. Tidak ada pengembalian dana yang dapat diproses.`;
+        }
+    }
+  }
+  
+  if (finalRefundAmount > 0) {
+    await safeFirebaseOperation(
+      () => addRefund({
+          orderCode: order.orderCode,
+          refundAmount: finalRefundAmount,
+          reason: refundReason,
+          processedBy: 'System Bot',
+          processedAt: new Date()
+      }),
+      `adding refund record for order ${order.orderCode}`
+    );
+  }
+
+  await safeFirebaseOperation(
+    () => updateDoc(doc(db, "orders", order.id as string), { 
+        status: newStatus, 
+        updatedAt: new Date(),
+        isCancelled: true 
+    }),
+    `cancelling order ${order.orderCode}`
+  );
+
+  await editMessageText(chatId, messageId, "❌ Pesanan telah dibatalkan.");
+  await sendMessage(chatId, customerMessage);
+  
+  if (OWNER_CHAT_ID) {
+      const ownerMessage = `❗️ *Permintaan Pembatalan & Refund*\n\nPelanggan *${order.customerName}* (${order.customerTelegram}) telah membatalkan pesanan *${order.orderCode}*.\n\n*Status Order:* ${newStatus}\n*Alasan:* ${refundReason}\n*Total Refund:* *Rp${finalRefundAmount.toLocaleString('id-ID')}*\n\nMohon segera proses pengembalian dana (jika ada) dan konfirmasi ke pelanggan.`;
+      await sendMessage(OWNER_CHAT_ID, ownerMessage);
+  }
+}
+
+
+// --- Alur Dialog Bot ---
 
 async function askAboutNextItem(order: Order, chatId: number | string, messageId: number) {
   if (!order.id || !db) {
