@@ -52,9 +52,9 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
     const batch = writeBatch(currentDb!);
     let count = 0;
 
-    oldProductsSnapshot.forEach((doc) => {
-      const productData = doc.data();
-      const newProductRef = doc(collection(currentDb!, 'products')); 
+    oldProductsSnapshot.forEach((productDoc) => { // FIX: Renamed 'doc' to 'productDoc' to avoid conflict
+      const productData = productDoc.data();
+      const newProductRef = doc(collection(currentDb!, 'products')); // Now this 'doc' refers to the imported function
       batch.set(newProductRef, productData);
       count++;
     });
