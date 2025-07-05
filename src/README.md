@@ -18,26 +18,33 @@ Aplikasi tidak akan berfungsi dengan benar jika langkah ini dilewati.
 
 ---
 
-## ⚠️ PENTING #2: Mengatasi Error `PERMISSION_DENIED`
+## ⚠️ PENTING #2: Mengatasi Error Kritis (Database Tidak Ada atau Terkunci)
 
-Jika Anda melihat error `PERMISSION_DENIED` di log server Anda, itu berarti database Anda terkunci. Ini adalah pengaturan default Firebase untuk keamanan.
+Jika Anda melihat error `FAILED_PRECONDITION: ...database was deleted` atau `PERMISSION_DENIED` di log server, ini masalah konfigurasi Firebase yang umum.
 
-**Solusi Cepat untuk Pengembangan:**
+**Penyebab & Solusi:**
+Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda.
 
-1.  Buka **Project Settings > Firestore Database** di Firebase Console.
-2.  Pilih tab **Rules** (Aturan).
-3.  Ubah aturannya menjadi "Test Mode" dengan mengganti isinya menjadi:
-    ```
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-        match /{document=**} {
-          allow read, write: if true;
-        }
-      }
+1.  Buka **Firebase Console** dan pilih proyek Anda.
+2.  Di menu sebelah kiri, klik **Build > Firestore Database**.
+3.  Klik tombol besar **"Create database"**.
+4.  Pilih lokasi server (misal: `nam5 (us-central)`). Klik **Next**.
+5.  Pilih **Start in test mode**. Ini akan membuat aturan keamanan yang mengizinkan baca/tulis selama pengembangan.
+6.  Klik **Enable**. Tunggu beberapa saat hingga database Anda siap.
+
+Setelah database dibuat, error `database was deleted` akan hilang. Jika Anda kemudian mendapatkan error `PERMISSION_DENIED`, itu berarti aturan keamanannya salah. Pastikan isinya seperti ini di tab **Rules**:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
     }
-    ```
-4.  Klik **Publish**.
+  }
+}
+```
+Klik **Publish**.
 
 **Peringatan:** Aturan ini membuat data Anda bisa diakses oleh siapa saja. Ini aman untuk pengembangan, tetapi **WAJIB** diamankan sebelum aplikasi Anda diluncurkan ke publik. [Pelajari cara mengamankan data Anda di sini.](https://firebase.google.com/docs/firestore/security/get-started)
 
