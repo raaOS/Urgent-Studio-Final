@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -64,7 +65,7 @@ export default function GoogleDriveIntegrationPage() {
                         <CardDescription>Izinkan proyek Anda untuk berkomunikasi dengan Google Drive.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>Buka Google Cloud Console dan pastikan Anda sudah memilih proyek Firebase yang benar (`artisant-5dmih`).</p>
+                        <p>Buka Google Cloud Console. Di bagian atas halaman, pastikan Anda telah memilih proyek yang benar, yaitu proyek yang sedang Anda kerjakan saat ini (misalnya, yang bernama <strong>database urgent studio</strong> di gambar Anda).</p>
                         <Button asChild>
                             <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noopener noreferrer">
                                 Buka Halaman Google Drive API <LinkIcon className="ml-2 h-4 w-4" />
@@ -89,7 +90,7 @@ export default function GoogleDriveIntegrationPage() {
                         </Button>
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Klik **"+ CREATE SERVICE ACCOUNT"** di bagian atas.</li>
-                            <li>Beri nama (misal: `artisant-drive-manager`) dan klik **"CREATE AND CONTINUE"**.</li>
+                            <li>Beri nama (misal: `urgent-studio-drive-manager`) dan klik **"CREATE AND CONTINUE"**.</li>
                             <li>Pada bagian "Grant this service account access to project", pilih peran **"Editor"** agar bisa membuat folder. Klik **"CONTINUE"**.</li>
                             <li>Lewati langkah ketiga (grant users access) dan klik **"DONE"**.</li>
                             <li>Anda akan kembali ke daftar. Cari akun yang baru Anda buat, klik ikon titik tiga (⋮) di ujung kanan, lalu pilih **"Manage keys"**.</li>
@@ -143,7 +144,7 @@ export default function GoogleDriveIntegrationPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                            <li>Buat satu folder khusus di Google Drive Anda, misalnya dengan nama **"Artisant Projects"**. Folder ini akan menjadi "rumah" bagi semua folder proyek klien.</li>
+                            <li>Buat satu folder khusus di Google Drive Anda, misalnya dengan nama **"Urgent Studio Projects"**. Folder ini akan menjadi "rumah" bagi semua folder proyek klien.</li>
                             <li>Buka folder tersebut, klik namanya di bagian atas, lalu pilih **"Share"** -> **"Share"**.</li>
                             <li>Di kolom "Add people and groups", **tempelkan `client_email`** dari Langkah 3.</li>
                             <li>Pastikan perannya adalah **"Editor"**, lalu klik **"Send"**. Abaikan peringatan yang mungkin muncul.</li>
