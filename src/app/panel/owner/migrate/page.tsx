@@ -86,23 +86,12 @@ export default function MigrationPage() {
                     <CardDescription>Alat ini akan membaca koleksi dari database lama dan menyalinnya ke database proyek saat ini.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-center gap-4 text-center">
-                        <div className="p-4 border rounded-lg bg-muted text-center">
-                            <p className="font-semibold">Database Lama</p>
-                            <p className="text-sm font-code text-muted-foreground">ID: {'database-urgent-studio'}</p>
-                        </div>
-                        <ArrowRight className="h-8 w-8 text-primary" />
-                         <div className="p-4 border-2 border-primary rounded-lg bg-primary/10 text-center">
-                            <p className="font-semibold">Database Saat Ini</p>
-                            <p className="text-sm font-code text-muted-foreground">{process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}</p>
-                        </div>
-                    </div>
                     <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Penting! Baca Sebelum Melanjutkan</AlertTitle>
                         <AlertDescription>
                            <ul className="list-disc pl-5 space-y-1">
-                                <li>Pastikan Anda sudah mengatur variabel `OLD_FIREBASE_API_KEY` di file `.env` dengan benar.</li>
+                               <li>Pastikan Anda sudah mengatur variabel `OLD_FIREBASE_API_KEY` di file `.env` dengan benar.</li>
                                <li>Setiap tombol hanya perlu ditekan **SATU KALI SAJA**. Menjalankannya beberapa kali dapat menyebabkan **duplikasi data**.</li>
                            </ul>
                         </AlertDescription>
@@ -115,7 +104,7 @@ export default function MigrationPage() {
                     </Button>
                     <Button onClick={handleOtherDataMigration} disabled={isLoading || isOtherLoading}>
                         {isOtherLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                        Migrasi Data Lain (User, Kupon, dll)
+                        Migrasi Data Lain (User, Kupon, Setting, dll)
                     </Button>
                 </CardFooter>
             </Card>

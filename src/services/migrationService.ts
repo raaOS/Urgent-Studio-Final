@@ -54,6 +54,7 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
 
     oldProductsSnapshot.forEach((productDoc) => {
       const productData = productDoc.data();
+      // Penting: Kita membuat ID baru di database tujuan agar tidak terjadi konflik
       const newProductRef = doc(collection(currentDb!, 'products'));
       batch.set(newProductRef, productData);
       count++;
@@ -72,7 +73,7 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
   }
 }
 
-// Fungsi untuk memigrasi data lainnya (users, coupons, banners, promos)
+// Fungsi untuk memigrasi data lainnya (users, coupons, banners, promos, settings)
 export async function migrateOtherDataFromOldProject(): Promise<{ success: boolean; results: Record<string, number>; error?: string }> {
   if (!isCurrentDbConfigured) {
     return { success: false, results: {}, error: "Database tujuan (saat ini) tidak terkonfigurasi." };
@@ -81,7 +82,7 @@ export async function migrateOtherDataFromOldProject(): Promise<{ success: boole
     return { success: false, results: {}, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env." };
   }
   
-  const collectionsToMigrate = ['users', 'coupons', 'banners', 'promos'];
+  const collectionsToMigrate = ['users', 'coupons', 'banners', 'promos', 'settings'];
   const results: Record<string, number> = {};
   let totalMigrated = 0;
 
@@ -94,9 +95,11 @@ export async function migrateOtherDataFromOldProject(): Promise<{ success: boole
       const oldSnapshot = await getDocs(oldCollection);
       
       let count = 0;
-      oldSnapshot.forEach((docData) => {
-        const data = docData.data();
-        const newDocRef = doc(collection(currentDb!, collectionName));
+      oldSnapshot.forEach((document) => {
+        const data = document.data();
+        // Penting: Gunakan ID dokumen yang sama untuk menjaga referensi,
+        // terutama untuk koleksi 'settings'.
+        const newDocRef = doc(currentDb!, collectionName, document.id);
         batch.set(newDocRef, data);
         count++;
       });
