@@ -11,12 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Pencil, Trash2, ChevronLeft, ChevronRight, Eye, Loader2, Check } from 'lucide-react';
+import { PlusCircle, Pencil, Trash2, ChevronLeft, ChevronRight, Eye, Loader2, Check, Sparkles } from 'lucide-react';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import { getProducts, addProduct, updateProduct, deleteProduct } from '@/services/productService';
+import { getProducts, addProduct, updateProduct, deleteProduct, seedMockProducts } from '@/services/productService';
 
 const ITEMS_PER_PAGE = 5;
 const productCategories = ['Konten Digital', 'Branding & Cetak', 'Promosi Outdoor'];
@@ -24,6 +24,7 @@ const productCategories = ['Konten Digital', 'Branding & Cetak', 'Promosi Outdoo
 export default function ProductsClient({ initialProducts }: { initialProducts: Product[] }) {
   const [products, setProducts] = React.useState<Product[]>(initialProducts);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isSeeding, setIsSeeding] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<Product | null>(null);
@@ -143,6 +144,25 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
         setIsSaving(false);
     }
   };
+  
+  const handleSeedData = async () => {
+    if(!confirm("Anda yakin ingin menambahkan semua produk contoh ke database? Ini akan menambahkan sekitar 19 produk.")) return;
+    setIsSeeding(true);
+    try {
+        const result = await seedMockProducts();
+        if (result.success) {
+            toast({ title: "Sukses!", description: `${result.count} produk contoh berhasil ditambahkan.` });
+            fetchProducts();
+        } else {
+            throw new Error(result.error);
+        }
+    } catch(error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        toast({ variant: "destructive", title: "Gagal Menambahkan Data", description: errorMessage });
+    } finally {
+        setIsSeeding(false);
+    }
+  }
 
   return (
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -154,11 +174,17 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
                 Total {products.length} produk terdaftar. Klik untuk melihat detail.
               </CardDescription>
             </div>
-            <DialogTrigger asChild>
-            <Button onClick={handleAddNew} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" /> Tambah Produk
-            </Button>
-            </DialogTrigger>
+            <div className='flex flex-col sm:flex-row gap-2 w-full sm:w-auto'>
+              <Button onClick={handleSeedData} variant="outline" className="w-full sm:w-auto" disabled={isSeeding}>
+                {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Isi Data Contoh
+              </Button>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNew} className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Tambah Produk
+                </Button>
+              </DialogTrigger>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -169,7 +195,10 @@ export default function ProductsClient({ initialProducts }: { initialProducts: P
             ) : (
                 <Accordion type="single" collapsible className="w-full space-y-2">
                 {currentProducts.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">Belum ada produk yang ditambahkan.</p>
+                    <div className="text-center py-10 text-muted-foreground">
+                        <p className='font-semibold'>Database Anda Kosong</p>
+                        <p className='text-sm mt-1'>Klik tombol "Isi Data Contoh" untuk memulai.</p>
+                    </div>
                 ) : (
                     currentProducts.map((product) => (
                         <AccordionItem value={product.id} key={product.id} className="border-b-0 rounded-md bg-background data-[state=open]:shadow-md">

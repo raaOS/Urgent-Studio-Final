@@ -14,7 +14,9 @@ import {
   where,
   documentId,
   type DocumentData,
+  writeBatch,
 } from 'firebase/firestore';
+import { mockProducts } from '@/lib/data';
 
 // Helper to convert Firestore doc to Product, ensuring prices object exists
 function toProduct(document: DocumentData): Product {
@@ -106,4 +108,26 @@ export async function deleteProduct(id: string): Promise<void> {
         console.warn(`Firebase Warning: Gagal menghapus produk ${id}:`, error);
         throw new Error("Gagal menghapus produk dari database.");
     }
+}
+
+// Seeds the database with mock products
+export async function seedMockProducts(): Promise<{success: boolean, count: number, error?: string}> {
+  if (!isFirebaseConfigured || !db) {
+    return { success: false, count: 0, error: "Firebase tidak terkonfigurasi." };
+  }
+  try {
+    const batch = writeBatch(db);
+    mockProducts.forEach(product => {
+      // The mock data has an 'id' field, which we should not send to Firestore on creation.
+      const { id, ...productData } = product;
+      const productRef = doc(collection(db, 'products'));
+      batch.set(productRef, productData);
+    });
+    await batch.commit();
+    return { success: true, count: mockProducts.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Terjadi kesalahan tidak diketahui.";
+    console.error("Gagal mengisi data contoh:", error);
+    return { success: false, count: 0, error: message };
+  }
 }
