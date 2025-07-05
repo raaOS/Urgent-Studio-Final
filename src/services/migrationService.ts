@@ -5,15 +5,10 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, collection, getDocs, writeBatch, type Firestore, type DocumentData, doc } from 'firebase/firestore';
 import { db as currentDb, isFirebaseConfigured as isCurrentDbConfigured } from '@/lib/firebase';
 
-// =================================================================================
-// PENTING: KONFIGURASI PROYEK LAMA
-// =================================================================================
-// Ganti nilai di bawah ini dengan kredensial dari PROYEK FIREBASE LAMA Anda.
-// Anda bisa menemukannya di Firebase Console > Project Settings > General.
-const OLD_PROJECT_ID = 'database-urgent-studio'; // <-- INI SUDAH DIATUR
+const OLD_PROJECT_ID = 'database-urgent-studio'; 
 
 const oldFirebaseConfig = {
-  apiKey: process.env.OLD_FIREBASE_API_KEY, // Anda harus menambahkan ini ke .env
+  apiKey: process.env.OLD_FIREBASE_API_KEY, 
   authDomain: `${OLD_PROJECT_ID}.firebaseapp.com`,
   projectId: OLD_PROJECT_ID,
   storageBucket: `${OLD_PROJECT_ID}.appspot.com`,
@@ -23,7 +18,7 @@ const oldFirebaseConfig = {
 let oldApp: FirebaseApp | null = null;
 let oldDb: Firestore | null = null;
 
-const isOldDbConfigured = !!(oldFirebaseConfig.apiKey && oldFirebaseConfig.projectId && OLD_PROJECT_ID !== '<ID_PROYEK_LAMA_ANDA>');
+const isOldDbConfigured = !!oldFirebaseConfig.apiKey; // Simplified check
 
 if (isOldDbConfigured) {
     const oldAppName = 'oldProject';
@@ -42,7 +37,7 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
     return { success: false, count: 0, error: "Database tujuan (saat ini) tidak terkonfigurasi." };
   }
   if (!isOldDbConfigured || !oldDb) {
-    return { success: false, count: 0, error: "Konfigurasi proyek lama belum diatur di migrationService.ts atau OLD_FIREBASE_API_KEY belum diatur di .env. Harap periksa kembali." };
+    return { success: false, count: 0, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env. Harap periksa kembali." };
   }
 
   try {
@@ -59,7 +54,6 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
 
     oldProductsSnapshot.forEach((doc) => {
       const productData = doc.data();
-      // Penting: kita membuat dokumen baru di koleksi tujuan, bukan menggunakan ID lama
       const newProductRef = doc(collection(currentDb!, 'products')); 
       batch.set(newProductRef, productData);
       count++;

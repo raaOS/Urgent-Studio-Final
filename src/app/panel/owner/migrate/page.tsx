@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,31 +14,26 @@ export default function MigrationPage() {
     const { toast } = useToast();
 
     const handleMigration = async () => {
-        if (!confirm("Apakah Anda yakin ingin memulai migrasi? Ini akan menyalin semua produk dari database lama ke database saat ini. Produk yang sudah ada dengan nama yang sama mungkin akan terduplikasi.")) {
-            return;
-        }
         setIsLoading(true);
         setResult(null);
         try {
             const migrationResult = await migrateProductsFromOldProject();
             if (migrationResult.success) {
-                // Handle case where migration is "successful" but no products were found
                 if (migrationResult.count === 0 && migrationResult.error) {
                     setResult({ status: 'info', message: migrationResult.error });
-                    toast({ title: "Informasi Migrasi", description: migrationResult.error });
+                    toast({ title: "Informasi Migrasi", description: migrationResult.error, duration: 5000 });
                 } else {
-                    const successMessage = `Migrasi Selesai! ${migrationResult.count} produk berhasil disalin.`;
+                    const successMessage = `Migrasi Selesai! ${migrationResult.count} produk berhasil disalin. Silakan refresh halaman Kontrol Produk untuk melihatnya.`;
                     setResult({ status: 'success', message: successMessage });
-                    toast({ title: "Migrasi Berhasil!", description: successMessage });
+                    toast({ title: "Migrasi Berhasil!", description: successMessage, duration: 5000 });
                 }
             } else {
-                // This will be caught by the catch block below
                 throw new Error(migrationResult.error);
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
             setResult({ status: 'error', message: message });
-            toast({ variant: 'destructive', title: "Gagal Migrasi", description: message });
+            toast({ variant: 'destructive', title: "Gagal Migrasi", description: message, duration: 9000 });
         } finally {
             setIsLoading(false);
         }
@@ -66,14 +60,18 @@ export default function MigrationPage() {
                         <ArrowRight className="h-8 w-8 text-primary" />
                          <div className="p-4 border-2 border-primary rounded-lg bg-primary/10 text-center">
                             <p className="font-semibold">Database Saat Ini</p>
-                            <p className="text-sm font-code text-muted-foreground">{process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}</p>
+                            <p className="text-sm font-code text-muted-foreground">{process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'artisant-5dmih'}</p>
                         </div>
                     </div>
                     <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Perhatian!</AlertTitle>
+                        <AlertTitle>Penting! Baca Sebelum Melanjutkan</AlertTitle>
                         <AlertDescription>
-                           Pastikan Anda sudah mengatur variabel `OLD_FIREBASE_API_KEY` di file `.env` Anda dengan API Key dari proyek lama. Jika belum, migrasi akan gagal.
+                           <ul className="list-disc pl-5 space-y-1">
+                                <li>Pastikan Anda sudah mengatur variabel `OLD_FIREBASE_API_KEY` di file `.env` dengan benar.</li>
+                               <li>Proses ini hanya menyalin koleksi **`products`**. Data lain (orders, users, dll) tidak ikut tersalin.</li>
+                               <li>Menjalankan migrasi beberapa kali dapat menyebabkan **duplikasi produk**.</li>
+                           </ul>
                         </AlertDescription>
                     </Alert>
                 </CardContent>
