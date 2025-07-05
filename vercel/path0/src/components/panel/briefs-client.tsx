@@ -11,14 +11,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FileText, Eye, Sparkles, Wand2, Loader2, AlertCircle, CheckCircle, Info, Lightbulb, Send, ListChecks, Link as LinkIcon, Ruler } from 'lucide-react';
-import type { Order, OrderItem, OrderItemStatus, OrderStatus, Brief } from "@/lib/types";
+import type { Order, OrderItem, OrderItemStatus, OrderStatus, Brief, AnalyzeBriefComplexityOutput, ExtractDesignElementsOutput } from "@/lib/types";
 import { useToast } from '@/hooks/use-toast';
 import { Label } from "@/components/ui/label";
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { getOrders, updateOrder } from '@/services/orderService';
-import { analyzeBriefComplexity, type AnalyzeBriefComplexityOutput } from '@/ai/flows/analyze-brief-complexity';
-import { extractDesignElements, type ExtractDesignElementsOutput } from '@/ai/flows/extract-design-elements';
+import { analyzeBriefComplexity } from '@/ai/flows/analyze-brief-complexity';
+import { extractDesignElements } from '@/ai/flows/extract-design-elements';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
