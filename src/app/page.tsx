@@ -15,7 +15,6 @@ export const revalidate = 300;
 export default async function Page() {
 
   // Pilar 1: Pertahanan Terhadap Error Konfigurasi.
-  // Jika terjadi error 'database deleted', tampilkan panduan yang jelas.
   try {
     const productsPromise = getProducts();
     const capacityPromise = getCapacitySettings();
@@ -47,8 +46,13 @@ export default async function Page() {
     return <HomePageClient initialProducts={initialProducts} isQuotaFull={isQuotaFull} initialBanners={activeBanners} />;
 
   } catch (error) {
-    // Periksa apakah error ini adalah error spesifik 'database deleted' dari Firestore.
-    if (error instanceof Error && (error.message.includes('failed-precondition') || error.message.includes('database was deleted') || error.message.includes('permission-denied'))) {
+    const errorMessage =
+      error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : 'Unknown error';
+
+    // Periksa apakah ini adalah error konfigurasi Firestore yang umum.
+    if (errorMessage.includes('failed-precondition') || errorMessage.includes('database was deleted') || errorMessage.includes('permission-denied')) {
       return <FirestoreNotConfiguredError />;
     }
 

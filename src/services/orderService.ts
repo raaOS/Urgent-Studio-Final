@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, isFirebaseConfigured } from '@/lib/firebase';
@@ -89,7 +90,7 @@ export async function getOrders(): Promise<Order[]> {
         const orderSnapshot = await getDocs(ordersCollection);
         return orderSnapshot.docs.map(toOrder);
     } catch (error) {
-        console.error("Gagal mengambil data pesanan:", error);
+        console.warn("Gagal mengambil data pesanan:", error);
         throw error;
     }
 }
@@ -152,7 +153,7 @@ export async function getWeeklyOrderCount(): Promise<number> {
     return snapshot.data().count;
 
   } catch (error) {
-    console.error(`Firebase Warning: Gagal menghitung pesanan mingguan:`, error);
+    console.warn(`Firebase Warning: Gagal menghitung pesanan mingguan:`, error);
     // Re-throw the error to be caught by the page
     throw error;
   }
@@ -251,7 +252,7 @@ export async function sendRemindersToStalledOrders(): Promise<{ success: boolean
     return { success: true, remindersSent: remindersSentCount };
 
   } catch (error) {
-    console.error("Gagal mengirim pengingat massal:", error);
+    console.warn("Gagal mengirim pengingat massal:", error);
     const message = error instanceof Error ? error.message : "Kesalahan tidak diketahui.";
     return { success: false, remindersSent: 0, error: message };
   }

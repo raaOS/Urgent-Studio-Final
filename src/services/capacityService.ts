@@ -28,7 +28,7 @@ export async function getCapacitySettings(): Promise<CapacitySettings> {
       return defaultCapacity;
     }
   } catch (error) {
-    console.error("Firebase Warning: Gagal mengambil pengaturan kapasitas:", error);
+    console.warn("Firebase Warning: Gagal mengambil pengaturan kapasitas:", error);
     throw error;
   }
 }

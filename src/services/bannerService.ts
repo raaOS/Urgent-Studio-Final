@@ -35,7 +35,7 @@ export async function getBanners(): Promise<Banner[]> {
     const snapshot = await getDocs(bannersCollection);
     return snapshot.docs.map(toBanner);
   } catch (error) {
-    console.error("Firebase Error: Gagal mengambil banners:", error);
+    console.warn("Firebase Warning: Gagal mengambil banners:", error);
     throw error;
   }
 }
@@ -49,7 +49,7 @@ export async function getActiveBanners(): Promise<Banner[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(toBanner);
   } catch (error) {
-    console.error("Firebase Warning: Gagal mengambil banners aktif:", error);
+    console.warn("Firebase Warning: Gagal mengambil banners aktif:", error);
     throw error;
   }
 }
