@@ -48,13 +48,16 @@ export default async function Page() {
         return <HomePageClient initialProducts={initialProducts} isQuotaFull={isQuotaFull} initialBanners={activeBanners} />;
 
     } catch (error) {
-        const errorMessage =
-        error && typeof error === 'object' && 'message' in error
-            ? String(error.message)
-            : 'Unknown error';
+        const errorMessage = (error as Error)?.message || '';
+        const errorCode = (error as { code?: string })?.code || '';
 
         // Periksa apakah ini adalah error konfigurasi Firestore yang umum.
-        if (errorMessage.includes('failed-precondition') || errorMessage.includes('database was deleted') || errorMessage.includes('permission-denied')) {
+        if (
+            errorMessage.includes('failed-precondition') ||
+            errorMessage.includes('database was deleted') ||
+            errorMessage.includes('permission-denied') ||
+            errorCode === 'failed-precondition'
+        ) {
           // Ini adalah error yang diharapkan jika DB belum dibuat. Tampilkan panduan.
           return <FirestoreNotConfiguredError />;
         }
