@@ -41,7 +41,6 @@ export const menuConfig: (MenuItem | MenuGroup)[] = [
       { label: 'Kontrol Produk', href: '/panel/owner/products', icon: Paintbrush },
       { label: 'Kontrol Pengguna', href: '/panel/owner/users', icon: Users },
       { label: 'Kontrol Kapasitas', href: '/panel/owner/capacity', icon: Box },
-      { label: 'Migrasi Data', href: '/panel/owner/migrate', icon: Database },
     ],
   },
   {
