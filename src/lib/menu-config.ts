@@ -16,6 +16,7 @@ import {
   Globe,
   Lock,
   Workflow,
+  Database,
 } from 'lucide-react';
 
 export type MenuItem = {
@@ -36,10 +37,11 @@ export const menuConfig: (MenuItem | MenuGroup)[] = [
     groupIcon: Crown,
     items: [
       { label: 'Kontrol Pesanan', href: '/panel/owner/orders', icon: ClipboardList },
-      { label: 'Alur Bot', href: '/panel/owner/bot-flow', icon: Workflow }, // <-- Ditambahkan
+      { label: 'Alur Bot', href: '/panel/owner/bot-flow', icon: Workflow },
       { label: 'Kontrol Produk', href: '/panel/owner/products', icon: Paintbrush },
       { label: 'Kontrol Pengguna', href: '/panel/owner/users', icon: Users },
       { label: 'Kontrol Kapasitas', href: '/panel/owner/capacity', icon: Box },
+      { label: 'Migrasi Data', href: '/panel/owner/migrate', icon: Database },
     ],
   },
   {
