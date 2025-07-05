@@ -43,6 +43,57 @@ Jika Anda melihat error `PERMISSION_DENIED` di log server Anda, itu berarti data
 
 ---
 
+## 🗄️ PENTING #3: Panduan Memindahkan Data Firestore (Migrasi)
+
+Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong di proyek `artisant-5dmih`.
+
+Untuk memindahkan data dari proyek lama ke proyek baru, ikuti panduan ini.
+
+**Opsi 1: Rekreasi Manual (Direkomendasikan Jika Data Sedikit)**
+
+Jika Anda baru memiliki beberapa produk atau pengguna, cara termudah dan tercepat adalah dengan membuatnya kembali secara manual melalui **Panel Admin** Anda.
+
+1.  Jalankan aplikasi secara lokal (`npm run dev`).
+2.  Buka `/panel/owner/products`, `/panel/owner/users`, dll.
+3.  Buat ulang semua produk, pengguna, kupon, dan banner yang Anda butuhkan. Data ini akan langsung tersimpan di database proyek `artisant-5dmih` yang baru.
+
+**Opsi 2: Ekspor & Impor Otomatis (Untuk Data Banyak)**
+
+Metode ini lebih teknis tetapi dapat memindahkan semua data sekaligus. Anda memerlukan [Google Cloud SDK (gcloud)](https://cloud.google.com/sdk/docs/install) terpasang di komputer Anda.
+
+**Peringatan:** Proses ini memerlukan akun Firebase dengan paket **Blaze (Pay-as-you-go)**. Namun, biasanya tidak akan ada biaya jika penggunaan Anda masih di bawah kuota gratis.
+
+#### Langkah 1: Ekspor Data dari Proyek LAMA
+
+1.  Buka terminal atau command prompt Anda.
+2.  Atur `gcloud` untuk menunjuk ke proyek **LAMA** Anda (ganti `<ID_PROYEK_LAMA>`):
+    ```bash
+    gcloud config set project <ID_PROYEK_LAMA>
+    ```
+3.  Buat bucket penyimpanan untuk backup (pastikan lokasi bucket sama dengan lokasi Firestore Anda, misal: `nam1` atau `asia-southeast2`):
+    ```bash
+    gsutil mb -p <ID_PROYEK_LAMA> -l <LOKASI_FIRESTORE> gs://<ID_PROYEK_LAMA>.appspot.com
+    ```
+4.  Jalankan perintah ekspor. Ini akan menyimpan semua data Firestore Anda ke dalam bucket:
+    ```bash
+    gcloud firestore export gs://<ID_PROYEK_LAMA>.appspot.com/firestore-backup
+    ```
+
+#### Langkah 2: Impor Data ke Proyek BARU
+
+1.  Sekarang, atur `gcloud` untuk menunjuk ke proyek **BARU** Anda (`artisant-5dmih`):
+    ```bash
+    gcloud config set project artisant-5dmih
+    ```
+2.  Jalankan perintah impor. Ini akan menyalin data dari bucket proyek lama ke Firestore proyek baru Anda:
+    ```bash
+    gcloud firestore import gs://<ID_PROYEK_LAMA>.appspot.com/firestore-backup
+    ```
+
+Setelah proses impor selesai, database di proyek `artisant-5dmih` Anda akan berisi data yang sama persis dengan proyek lama Anda.
+
+---
+
 ## 📝 Checklist Kualitas Proyek
 
 Setiap kali perintah `CEK` digunakan, AI akan melakukan tinjauan berdasarkan poin-poin berikut untuk memastikan aplikasi andal dan profesional.
@@ -265,4 +316,3 @@ Sekarang, beri tahu Telegram untuk mengirim pesan ke URL `ngrok` Anda. Gunakan p
 Server lokal Anda kini terhubung dengan Telegram! Anda dapat menguji seluruh alur checkout dan konfirmasi bot secara lokal. Setiap perubahan pada `src/app/api/telegram-webhook/route.ts` akan langsung terlihat tanpa perlu deploy ulang.
 
 **PENTING:** URL `ngrok` bersifat sementara. Jika Anda me-restart `ngrok`, Anda akan mendapatkan URL baru dan perlu mengulangi **Langkah 3** untuk memperbarui webhook di Telegram.
-
