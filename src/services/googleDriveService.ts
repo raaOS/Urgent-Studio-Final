@@ -13,7 +13,13 @@ function getGoogleAuth() {
     // Memvalidasi variabel environment
     const missingVars = requiredEnvVars.filter(v => !process.env[v]);
     if (missingVars.length > 0) {
-        throw new Error(`Variabel environment berikut belum diatur: ${missingVars.join(', ')}`);
+        const errorDetails = missingVars.map(v => {
+            if (v === 'GOOGLE_CLIENT_EMAIL') return `- ${v}: Salin nilai "client_email" dari file JSON Anda.`;
+            if (v === 'GOOGLE_PRIVATE_KEY') return `- ${v}: Salin seluruh "private_key" (termasuk "-----BEGIN..." dan "-----END...") dari file JSON Anda.`;
+            if (v === 'GOOGLE_DRIVE_FOLDER_ID') return `- ${v}: Salin ID dari URL folder utama di Google Drive Anda.`;
+            return `- ${v}`;
+        }).join('\n');
+        throw new Error(`Beberapa variabel environment penting belum diatur. Mohon periksa file .env atau pengaturan environment di Vercel Anda:\n\n${errorDetails}`);
     }
 
     // Memformat private key yang mungkin memiliki karakter escape
@@ -48,19 +54,22 @@ export async function testGoogleDriveConnection(): Promise<{ success: boolean; m
     } catch (error: any) {
         console.error('Google Drive connection test failed:', error);
 
-        let errorMessage = 'Terjadi kesalahan yang tidak diketahui.';
-        if (error.message) {
-            errorMessage = error.message;
-        }
-        if (error.response?.data?.error_description) {
-           errorMessage = error.response.data.error_description;
-        } else if (error.response?.data?.error?.message) {
-            errorMessage = error.response.data.error.message;
+        let detailedErrorMessage = '';
+        if (error.message.includes('variabel environment penting belum diatur')) {
+            // Error dari validasi internal kita
+            detailedErrorMessage = error.message;
+        } else if (error.code === 404) {
+             detailedErrorMessage = `Folder dengan ID '${process.env.GOOGLE_DRIVE_FOLDER_ID}' tidak ditemukan. Pastikan GOOGLE_DRIVE_FOLDER_ID sudah benar dan tidak ada salah ketik.`;
+        } else if (error.code === 403 || (error.message && error.message.toLowerCase().includes('permission'))) {
+             detailedErrorMessage = `Izin ditolak. Pastikan Anda sudah membagikan (share) folder utama di Google Drive ke "client_email" (${process.env.GOOGLE_CLIENT_EMAIL || 'EMAIL BELUM DIATUR'}) dengan akses sebagai "Editor". Ini adalah langkah yang paling sering terlewat.`;
+        } else {
+            // Error umum lainnya
+            detailedErrorMessage = error.message || 'Terjadi kesalahan yang tidak diketahui.';
         }
 
         return {
             success: false,
-            message: `Gagal terhubung: ${errorMessage}. Pastikan semua langkah di panduan sudah diikuti dengan benar, terutama langkah membagikan folder ke client_email.`,
+            message: `Gagal terhubung.\n\n${detailedErrorMessage}`,
         };
     }
 }

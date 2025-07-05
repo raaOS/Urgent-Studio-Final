@@ -11,10 +11,8 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, CheckCircle2, FileJson, KeyRound, Link as LinkIcon, Loader2, Share2, AlertTriangle, HelpCircle } from "lucide-react";
 import Link from 'next/link';
 import { testGoogleDriveConnection } from '@/services/googleDriveService';
-import { useToast } from '@/hooks/use-toast';
 
 export default function GoogleDriveIntegrationPage() {
-    const { toast } = useToast();
     const [isTesting, setIsTesting] = React.useState(false);
     const [testResult, setTestResult] = React.useState<{ success: boolean; message: string; } | null>(null);
 
@@ -24,11 +22,6 @@ export default function GoogleDriveIntegrationPage() {
         const result = await testGoogleDriveConnection();
         setTestResult(result);
         setIsTesting(false);
-        toast({
-            title: result.success ? "Koneksi Berhasil!" : "Koneksi Gagal",
-            description: result.message,
-            variant: result.success ? "default" : "destructive",
-        });
     };
 
     return (
@@ -44,11 +37,24 @@ export default function GoogleDriveIntegrationPage() {
                 <p className="text-muted-foreground">Hubungkan aplikasi ini dengan Google Drive untuk membuat folder proyek klien secara otomatis.</p>
             </div>
             
+            <Alert variant="destructive">
+                <KeyRound className="h-4 w-4"/>
+                <AlertTitle>Penting: Di Mana Harus Mengatur Variabel Ini?</AlertTitle>
+                <AlertDescription>
+                    Semua variabel di bawah ini <strong>TIDAK</strong> diatur di halaman ini, melainkan di <strong>Environment Variables</strong>.
+                    <ul className="list-disc pl-5 mt-2 text-xs">
+                        <li><strong>Untuk Pengembangan Lokal:</strong> Masukkan ke dalam file <code className="font-mono bg-background px-1 py-0.5 rounded">.env</code> di direktori utama proyek Anda.</li>
+                        <li><strong>Untuk Aplikasi Live (di Vercel):</strong> Masukkan ke dalam menu <strong>Settings &gt; Environment Variables</strong> di dashboard proyek Vercel Anda.</li>
+                    </ul>
+                     <p className="mt-2 text-xs">Setelah mengatur di file <code className="font-mono bg-background px-1 py-0.5 rounded">.env</code>, Anda harus <strong>me-restart server dev Anda</strong> (tutup terminal lalu jalankan lagi <code className="font-mono bg-background px-1 py-0.5 rounded">npm run dev</code>) agar perubahan terbaca.</p>
+                </AlertDescription>
+            </Alert>
+
             {/* CARD PENGUJIAN KONEKSI */}
             <Card>
                 <CardHeader>
                     <CardTitle>Langkah Terakhir: Uji Koneksi Anda</CardTitle>
-                    <CardDescription>Setelah Anda yakin semua variabel environment sudah diatur di Vercel, tekan tombol ini untuk memeriksa apakah semuanya berfungsi.</CardDescription>
+                    <CardDescription>Setelah Anda yakin semua variabel environment sudah diatur, tekan tombol ini untuk memeriksa apakah semuanya berfungsi.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Button onClick={handleTestConnection} disabled={isTesting} size="lg">
@@ -56,7 +62,7 @@ export default function GoogleDriveIntegrationPage() {
                         Tes Koneksi Google Drive
                     </Button>
                     {testResult && (
-                         <Alert className="mt-4" variant={testResult.success ? 'default' : 'destructive'}>
+                         <Alert className="mt-4 whitespace-pre-wrap" variant={testResult.success ? 'default' : 'destructive'}>
                             {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
                             <AlertTitle>{testResult.success ? 'Berhasil' : 'Gagal'}</AlertTitle>
                             <AlertDescription>
