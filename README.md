@@ -22,18 +22,30 @@ Aplikasi tidak akan berfungsi dengan benar jika langkah ini dilewati.
 
 Jika Anda melihat error `FAILED_PRECONDITION: ...database was deleted` atau `PERMISSION_DENIED` di log server, ini masalah konfigurasi Firebase yang umum.
 
-**Penyebab & Solusi:**
-Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda.
+### Penyebab & Solusi Utama
+Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda. Ikuti langkah-langkah ini:
 
-1.  Buka **Firebase Console** dan pilih proyek Anda (misal: `artisant-5dmih`).
+1.  Buka **Firebase Console** dan pilih proyek Anda.
 2.  Di menu sebelah kiri, klik **Build > Firestore Database**.
-3.  Klik tombol besar **"Create database"**.
+3.  Klik tombol besar **"Create database"** atau **"Add database"**.
 4.  Pilih lokasi server (misal: `nam5 (us-central)`). Klik **Next**.
 5.  Pilih **Start in test mode**. Ini akan membuat aturan keamanan yang mengizinkan baca/tulis selama pengembangan.
 6.  Klik **Enable**. Tunggu beberapa saat hingga database Anda siap.
 
-Setelah database dibuat, error `database was deleted` akan hilang. Jika Anda kemudian mendapatkan error `PERMISSION_DENIED`, itu berarti aturan keamanannya salah. Pastikan isinya seperti ini di tab **Rules**:
+### Bantuan! Tombol "Create Database" Tidak Bisa Diklik atau Error?
+Jika Anda tidak bisa mengklik tombol "Create database" atau mendapatkan error saat melakukannya (seperti yang terlihat pada gambar Anda), ini hampir selalu disebabkan oleh masalah **izin (permissions)** pada akun Google Anda untuk proyek ini.
 
+**Solusi:** Anda harus memastikan akun Anda memiliki peran sebagai **"Owner"** atau **"Editor"**.
+1.  Buka [Google Cloud Console IAM Page](https://console.cloud.google.com/iam-admin/iam).
+2.  Pastikan proyek yang benar sudah terpilih di bagian atas halaman.
+3.  Cari alamat email Anda di dalam daftar.
+4.  Lihat kolom **"Role"**. Jika tertulis **"Viewer"**, Anda tidak akan bisa membuat database.
+5.  **Jika Anda bukan "Owner", hubungi orang yang memberikan Anda akses ke proyek ini dan minta mereka untuk mengubah peran Anda menjadi "Editor".**
+
+Setelah peran Anda diubah, kembali ke Firebase Console dan ulangi langkah-langkah di atas.
+
+### Error `PERMISSION_DENIED` Setelah Database Dibuat
+Jika Anda kemudian mendapatkan error `PERMISSION_DENIED`, itu berarti aturan keamanannya salah. Pastikan isinya seperti ini di tab **Rules**:
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -52,7 +64,7 @@ Klik **Publish**.
 
 ## 🗄️ PENTING #3: Panduan Memindahkan Data Firestore (Migrasi)
 
-Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong di proyek `artisant-5dmih`.
+Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong di proyek baru.
 
 Untuk memindahkan data dari proyek lama ke proyek baru, ikuti panduan ini.
 
@@ -63,7 +75,7 @@ Jika Anda baru memiliki beberapa produk atau pengguna, cara termudah dan tercepa
 1.  Pastikan Anda sudah menyelesaikan **PENTING #2** dan database Anda sudah aktif.
 2.  Jalankan aplikasi secara lokal (`npm run dev`).
 3.  Buka `/panel/owner/products`, `/panel/owner/users`, dll.
-4.  Buat ulang semua produk, pengguna, kupon, dan banner yang Anda butuhkan. Data ini akan langsung tersimpan di database proyek `artisant-5dmih` yang baru.
+4.  Buat ulang semua produk, pengguna, kupon, dan banner yang Anda butuhkan. Data ini akan langsung tersimpan di database proyek baru Anda.
 
 **Opsi 2: Ekspor & Impor Otomatis (Untuk Data Banyak)**
 
@@ -89,17 +101,17 @@ Metode ini lebih teknis tetapi dapat memindahkan semua data sekaligus. Anda meme
 
 #### Langkah 2: Impor Data ke Proyek BARU
 
-1.  Pastikan proyek BARU Anda (`artisant-5dmih`) sudah memiliki **database Firestore yang aktif**. Jika belum, ikuti **PENTING #2**.
+1.  Pastikan proyek BARU Anda sudah memiliki **database Firestore yang aktif**. Jika belum, ikuti **PENTING #2**.
 2.  Atur `gcloud` untuk menunjuk ke proyek **BARU** Anda:
     ```bash
-    gcloud config set project artisant-5dmih
+    gcloud config set project <ID_PROYEK_BARU>
     ```
 3.  Jalankan perintah impor. Ini akan menyalin data dari bucket proyek lama ke Firestore proyek baru Anda:
     ```bash
     gcloud firestore import gs://<ID_PROYEK_LAMA>.appspot.com/firestore-backup
     ```
 
-Setelah proses impor selesai, database di proyek `artisant-5dmih` Anda akan berisi data yang sama persis dengan proyek lama Anda.
+Setelah proses impor selesai, database di proyek baru Anda akan berisi data yang sama persis dengan proyek lama Anda.
 
 ---
 
@@ -118,7 +130,7 @@ Risiko sebenarnya bukanlah pada kode yang "crack", tetapi pada keamanan dan inte
 Anda bisa menggunakan fitur ekspor bawaan dari Google Cloud untuk menyimpan seluruh salinan database Firestore Anda. Proses ini sama persis dengan proses migrasi yang sudah dijelaskan di atas.
 
 1.  **Ikuti langkah-langkah di bagian "Langkah 1: Ekspor Data dari Proyek LAMA"** pada panduan migrasi di atas.
-2.  Gunakan ID proyek Anda saat ini (`artisant-5dmih`) sebagai sumbernya.
+2.  Gunakan ID proyek Anda saat ini sebagai sumbernya.
 3.  Simpan file hasil ekspor tersebut di tempat yang aman.
 
 Lakukan ini secara berkala (misalnya, setiap minggu) untuk memastikan Anda selalu punya salinan data yang aman.

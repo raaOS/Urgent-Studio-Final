@@ -22,18 +22,30 @@ Aplikasi tidak akan berfungsi dengan benar jika langkah ini dilewati.
 
 Jika Anda melihat error `FAILED_PRECONDITION: ...database was deleted` atau `PERMISSION_DENIED` di log server, ini masalah konfigurasi Firebase yang umum. **Aplikasi ini dirancang untuk menampilkan halaman error yang jelas jika masalah ini terjadi.**
 
-**Penyebab & Solusi:**
-Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda.
+### Penyebab & Solusi Utama
+Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda. Ikuti langkah-langkah ini:
 
-1.  Buka **Firebase Console** dan pilih proyek Anda (misal: `artisant-5dmih`).
+1.  Buka **Firebase Console** dan pilih proyek Anda.
 2.  Di menu sebelah kiri, klik **Build > Firestore Database**.
-3.  Klik tombol besar **"Create database"**.
+3.  Klik tombol besar **"Create database"** atau **"Add database"**.
 4.  Pilih lokasi server (misal: `nam5 (us-central)`). Klik **Next**.
 5.  Pilih **Start in test mode**. Ini akan membuat aturan keamanan yang mengizinkan baca/tulis selama pengembangan.
 6.  Klik **Enable**. Tunggu beberapa saat hingga database Anda siap.
 
-Setelah database dibuat, error `database was deleted` akan hilang. Jika Anda kemudian mendapatkan error `PERMISSION_DENIED`, itu berarti aturan keamanannya salah. Pastikan isinya seperti ini di tab **Rules**:
+### Bantuan! Tombol "Create Database" Tidak Bisa Diklik atau Error?
+Jika Anda tidak bisa mengklik tombol "Create database" atau mendapatkan error saat melakukannya (seperti yang terlihat pada gambar Anda), ini hampir selalu disebabkan oleh masalah **izin (permissions)** pada akun Google Anda untuk proyek ini.
 
+**Solusi:** Anda harus memastikan akun Anda memiliki peran sebagai **"Owner"** atau **"Editor"**.
+1.  Buka [Google Cloud Console IAM Page](https://console.cloud.google.com/iam-admin/iam).
+2.  Pastikan proyek yang benar sudah terpilih di bagian atas halaman.
+3.  Cari alamat email Anda di dalam daftar.
+4.  Lihat kolom **"Role"**. Jika tertulis **"Viewer"**, Anda tidak akan bisa membuat database.
+5.  **Jika Anda bukan "Owner", hubungi orang yang memberikan Anda akses ke proyek ini dan minta mereka untuk mengubah peran Anda menjadi "Editor".**
+
+Setelah peran Anda diubah, kembali ke Firebase Console dan ulangi langkah-langkah di atas.
+
+### Error `PERMISSION_DENIED` Setelah Database Dibuat
+Jika Anda kemudian mendapatkan error `PERMISSION_DENIED`, itu berarti aturan keamanannya salah. Pastikan isinya seperti ini di tab **Rules**:
 ```
 rules_version = '2';
 service cloud.firestore {
