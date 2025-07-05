@@ -64,10 +64,55 @@ Ini adalah momen untuk memasukkan kunci rahasia yang sudah Anda siapkan.
 
 ### Langkah 5 (Terakhir): Hubungkan Bot Telegram
 
-Bot Anda belum akan merespon sampai Anda memberitahu Telegram alamat baru website Anda.
+Bot Anda belum akan merespon sampai Anda memberitahu Telegram alamat baru website Anda. **Langkah ini cukup dilakukan satu kali saja.**
 
 1.  **Salin URL Vercel** yang baru saja Anda dapatkan.
-2.  Buka file `README.md` di proyek Anda dan ikuti instruksi pada bagian **"Langkah 4: Mendaftarkan 'Kantor Pos' (Webhook) ke Telegram"**.
-3.  Gunakan URL Vercel Anda saat membuat URL `setWebhook`.
+2.  Siapkan URL lengkap berikut di text editor:
+    `https://api.telegram.org/bot<TOKEN_ANDA>/setWebhook?url=<URL_VERCEL_ANDA>/api/telegram-webhook&secret_token=<SECRET_ANDA>`
+3.  Ganti bagian-bagian ini:
+    *   `<TOKEN_ANDA>`: Ganti dengan `TELEGRAM_BOT_TOKEN` Anda.
+    *   `<URL_VERCEL_ANDA>`: Ganti dengan URL publik aplikasi Anda di Vercel.
+    *   `<SECRET_ANDA>`: Ganti dengan `TELEGRAM_WEBHOOK_SECRET` Anda.
+4.  Contoh URL Final:
+    `https://api.telegram.org/bot123456:ABC.../setWebhook?url=https://nama-proyek-anda.vercel.app/api/telegram-webhook&secret_token=inikatasandirahasia-bot-12345`
+5.  Salin URL final tersebut dan tempelkan di address bar browser Anda, lalu tekan Enter.
+6.  Jika berhasil, Anda akan melihat pesan seperti ini di browser:
+    `{"ok":true,"result":true,"description":"Webhook was set"}`
 
 Setelah langkah ini selesai, seluruh sistem Anda, termasuk bot, akan berfungsi sepenuhnya.
+
+---
+
+### 🔧 Pengujian Bot Lokal (Opsional, untuk Developer)
+
+Webhook bot Telegram memerlukan URL publik untuk menerima pesan. Server lokal Anda (`localhost`) tidak dapat diakses dari internet. Untuk menguji bot secara lokal, Anda memerlukan layanan *tunneling* seperti `ngrok`.
+
+**Prasyarat:**
+- Akun `ngrok` (gratis sudah cukup).
+- `ngrok` sudah terpasang di komputer Anda. [Unduh di sini](https://ngrok.com/download).
+
+#### Langkah 1: Jalankan Server Lokal Anda
+
+Pastikan aplikasi Next.js Anda berjalan.
+
+```bash
+npm run dev
+```
+
+Aplikasi Anda akan berjalan di port tertentu, biasanya `3000`.
+
+#### Langkah 2: Jalankan `ngrok`
+
+Buka jendela terminal **baru yang terpisah** (jangan matikan server Next.js Anda). Jalankan perintah berikut, ganti `3000` dengan port aplikasi Anda jika berbeda.
+
+```bash
+ngrok http 3000
+```
+
+`ngrok` akan memberi Anda URL publik yang terlihat seperti ini: `https://<KARAKTER_ACAK>.ngrok-free.app`. **Salin URL `https://...` tersebut.**
+
+#### Langkah 3: Atur Webhook dengan URL `ngrok`
+
+Sekarang, ulangi **Langkah 5** di atas, tetapi ganti `<URL_VERCEL_ANDA>` dengan URL `ngrok` yang baru Anda salin. Ini akan memberitahu Telegram untuk mengirim pesan ke komputer lokal Anda selama pengujian.
+
+**PENTING:** URL `ngrok` bersifat sementara. Jika Anda me-restart `ngrok`, Anda akan mendapatkan URL baru dan perlu mengulangi **Langkah 3** untuk memperbarui webhook di Telegram.
