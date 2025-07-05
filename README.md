@@ -33,13 +33,18 @@ Error `database was deleted` hampir selalu berarti Anda belum **membuat database
 6.  Klik **Enable**. Tunggu beberapa saat hingga database Anda siap.
 
 ### Bantuan! Tombol "Create Database" Tidak Bisa Diklik atau Error?
-Jika Anda tidak bisa mengklik tombol "Create database" atau mendapatkan error saat melakukannya (seperti yang terlihat pada gambar Anda), ini hampir selalu disebabkan oleh masalah **izin (permissions)** pada akun Google Anda untuk proyek ini.
+Jika Anda tidak bisa mengklik tombol "Create database" atau mendapatkan error saat melakukannya, ini hampir selalu disebabkan oleh masalah **izin (permissions)** pada akun Google Anda untuk proyek ini.
 
 **Solusi:** Anda harus memastikan akun Anda memiliki peran sebagai **"Owner"** atau **"Editor"**.
 1.  Buka [Google Cloud Console IAM Page](https://console.cloud.google.com/iam-admin/iam).
 2.  Pastikan proyek yang benar sudah terpilih di bagian atas halaman.
 3.  Cari alamat email Anda di dalam daftar.
 4.  Lihat kolom **"Role"**. Jika tertulis **"Viewer"**, Anda tidak akan bisa membuat database.
+
+> **Contoh Kasus:** Pengguna mengirimkan gambar berikut, tetapi tidak menemukan email pribadinya.
+> ![Contoh IAM Service Accounts](https://storage.googleapis.com/project-idx-assets/gallery-images/iam-permissions-check.png)
+> **Penjelasan:** Gambar di atas hanya menunjukkan *Service Account* (akun robot sistem), bukan akun pengguna manusia. Anda perlu **menggulir ke bawah dan mencari alamat email pribadi Anda** di daftar tersebut untuk memeriksa perannya.
+
 5.  **Jika Anda bukan "Owner", hubungi orang yang memberikan Anda akses ke proyek ini dan minta mereka untuk mengubah peran Anda menjadi "Editor".**
 
 Setelah peran Anda diubah, kembali ke Firebase Console dan ulangi langkah-langkah di atas.
@@ -64,7 +69,7 @@ Klik **Publish**.
 
 ## 🗄️ PENTING #3: Panduan Memindahkan Data Firestore (Migrasi)
 
-Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong di proyek baru.
+Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong.
 
 Untuk memindahkan data dari proyek lama ke proyek baru, ikuti panduan ini.
 
