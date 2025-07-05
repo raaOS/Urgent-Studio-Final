@@ -2,12 +2,10 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
-import { Toaster } from "@/components/ui/toaster"
-import { CartProvider } from '@/context/CartContext';
 import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { getThemeSettings } from '@/services/themeService';
 import type { ThemeSettings } from '@/lib/types';
-import ErrorBoundary from '@/components/core/ErrorBoundary';
+import { Providers } from './providers';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -63,12 +61,9 @@ export default async function RootLayout({
         ptSans.variable,
         sourceCodePro.variable
       )}>
-        <ErrorBoundary>
-          <CartProvider>
-            {children}
-            <Toaster />
-          </CartProvider>
-        </ErrorBoundary>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -82,7 +82,7 @@ export async function migrateOtherDataFromOldProject(): Promise<{ success: boole
     return { success: false, results: {}, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env." };
   }
   
-  const collectionsToMigrate = ['users', 'coupons', 'banners', 'promos', 'settings'];
+  const collectionsToMigrate = ['orders', 'users', 'coupons', 'banners', 'promos', 'settings'];
   const results: Record<string, number> = {};
   let totalMigrated = 0;
 

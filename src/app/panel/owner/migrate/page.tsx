@@ -54,7 +54,7 @@ export default function MigrationPage() {
                 const total = Object.values(migrationResult.results).reduce((sum, count) => sum + count, 0);
 
                 if (total === 0) {
-                     setResult({ status: 'info', message: "Tidak ada data lain (users, coupons, dll) yang ditemukan untuk dimigrasi." });
+                     setResult({ status: 'info', message: "Tidak ada data lain (orders, users, coupons, dll) yang ditemukan untuk dimigrasi." });
                     toast({ title: "Informasi Migrasi", description: "Tidak ada data lain yang ditemukan.", duration: 5000 });
                 } else {
                     const successMessage = `Migrasi Data Lain Selesai! Total ${total} dokumen berhasil disalin.`;
@@ -104,7 +104,7 @@ export default function MigrationPage() {
                     </Button>
                     <Button onClick={handleOtherDataMigration} disabled={isLoading || isOtherLoading}>
                         {isOtherLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-                        Migrasi Data Lain (User, Kupon, Setting, dll)
+                        Migrasi Data Lain (Order, User, Kupon, dll)
                     </Button>
                 </CardFooter>
             </Card>
