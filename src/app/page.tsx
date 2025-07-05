@@ -14,53 +14,54 @@ export const revalidate = 300;
 
 export default async function Page() {
 
-  // Pilar 1: Pertahanan Terhadap Error Konfigurasi.
-  try {
-    const productsPromise = getProducts();
-    const capacityPromise = getCapacitySettings();
-    const weeklyOrderCountPromise = getWeeklyOrderCount();
-    const bannersPromise = getActiveBanners();
-
-    let [initialProducts, capacitySettings, weeklyOrderCount, activeBanners] = await Promise.all([
-      productsPromise,
-      capacityPromise,
-      weeklyOrderCountPromise,
-      bannersPromise,
-    ]);
-
-    let isQuotaFull = false;
-    if (capacitySettings.weekly > 0) {
-      if (weeklyOrderCount >= capacitySettings.weekly) {
-        isQuotaFull = true;
-      }
-    }
-    
-    // Fallback jika database sudah ada TAPI kosong
-    if (initialProducts.length === 0 && isFirebaseConfigured) {
-      console.log("INFO: Database kosong, produk tidak ditemukan. Anda bisa mengisi data contoh dari halaman /panel/owner/products.");
-    } else if (initialProducts.length === 0 && !isFirebaseConfigured) {
-      console.warn("INFO: Menampilkan produk dari data contoh (mockProducts) karena Firebase tidak terkonfigurasi.");
-      initialProducts = mockProducts.map(p => ({...p}));
+    // Pengecekan paling awal: apakah konfigurasi Firebase bahkan ada?
+    if (!isFirebaseConfigured) {
+        console.warn("INFO: Menampilkan produk dari data contoh (mockProducts) karena Firebase tidak terkonfigurasi.");
+        const initialProducts = mockProducts.map(p => ({...p}));
+        return <HomePageClient initialProducts={initialProducts} isQuotaFull={false} initialBanners={[]} />;
     }
 
-    return <HomePageClient initialProducts={initialProducts} isQuotaFull={isQuotaFull} initialBanners={activeBanners} />;
+    // Jika konfigurasi ADA, coba hubungi database.
+    try {
+        const productsPromise = getProducts();
+        const capacityPromise = getCapacitySettings();
+        const weeklyOrderCountPromise = getWeeklyOrderCount();
+        const bannersPromise = getActiveBanners();
 
-  } catch (error) {
-    const errorMessage =
-      error && typeof error === 'object' && 'message' in error
-        ? String(error.message)
-        : 'Unknown error';
+        const [initialProducts, capacitySettings, weeklyOrderCount, activeBanners] = await Promise.all([
+            productsPromise,
+            capacityPromise,
+            weeklyOrderCountPromise,
+            bannersPromise,
+        ]);
 
-    // Periksa apakah ini adalah error konfigurasi Firestore yang umum.
-    if (errorMessage.includes('failed-precondition') || errorMessage.includes('database was deleted') || errorMessage.includes('permission-denied')) {
-      return <FirestoreNotConfiguredError />;
+        let isQuotaFull = false;
+        if (capacitySettings.weekly > 0) {
+            isQuotaFull = weeklyOrderCount >= capacitySettings.weekly;
+        }
+        
+        // Fallback jika database sudah ada TAPI kosong
+        if (initialProducts.length === 0) {
+          console.log("INFO: Database kosong, produk tidak ditemukan. Anda bisa mengisi data contoh dari halaman /panel/owner/products.");
+        }
+
+        return <HomePageClient initialProducts={initialProducts} isQuotaFull={isQuotaFull} initialBanners={activeBanners} />;
+
+    } catch (error) {
+        const errorMessage =
+        error && typeof error === 'object' && 'message' in error
+            ? String(error.message)
+            : 'Unknown error';
+
+        // Periksa apakah ini adalah error konfigurasi Firestore yang umum.
+        if (errorMessage.includes('failed-precondition') || errorMessage.includes('database was deleted') || errorMessage.includes('permission-denied')) {
+          // Ini adalah error yang diharapkan jika DB belum dibuat. Tampilkan panduan.
+          return <FirestoreNotConfiguredError />;
+        }
+
+        // Untuk semua error lainnya yang tidak terduga, log dan tampilkan data contoh agar aplikasi tidak crash.
+        console.error("Terjadi error tak terduga saat mengambil data halaman utama. Menampilkan data contoh sebagai fallback:", error);
+        const initialProducts = mockProducts.map(p => ({...p}));
+        return <HomePageClient initialProducts={initialProducts} isQuotaFull={false} initialBanners={[]} />;
     }
-
-    // Untuk semua error lainnya, log dan tampilkan data contoh agar aplikasi tidak crash.
-    console.error("Terjadi error tak terduga saat mengambil data halaman utama. Menampilkan data contoh sebagai fallback:", error);
-    const initialProducts = mockProducts.map(p => ({...p}));
-    const isQuotaFull = false;
-    const activeBanners: Banner[] = [];
-    return <HomePageClient initialProducts={initialProducts} isQuotaFull={isQuotaFull} initialBanners={activeBanners} />;
-  }
 }
