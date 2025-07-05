@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -11,6 +10,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, CheckCircle2, FileJson, KeyRound, Link as LinkIcon, Loader2, Share2, AlertTriangle, HelpCircle } from "lucide-react";
 import Link from 'next/link';
 import { testGoogleDriveConnection } from '@/services/googleDriveService';
+import { cn } from '@/lib/utils';
 
 export default function GoogleDriveIntegrationPage() {
     const [isTesting, setIsTesting] = React.useState(false);
@@ -62,9 +62,16 @@ export default function GoogleDriveIntegrationPage() {
                         Tes Koneksi Google Drive
                     </Button>
                     {testResult && (
-                         <Alert className="mt-4 whitespace-pre-wrap" variant={testResult.success ? 'default' : 'destructive'}>
+                         <Alert 
+                            className={cn(
+                                "mt-4 whitespace-pre-wrap",
+                                testResult.success 
+                                ? "bg-green-100 border-green-300 text-green-800 [&>svg]:text-green-600" 
+                                : "border-destructive/50 text-destructive [&>svg]:text-destructive"
+                            )}
+                          >
                             {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                            <AlertTitle>{testResult.success ? 'Berhasil' : 'Gagal'}</AlertTitle>
+                            <AlertTitle className="font-bold">{testResult.success ? 'Berhasil' : 'Gagal'}</AlertTitle>
                             <AlertDescription>
                                 {testResult.message}
                             </AlertDescription>

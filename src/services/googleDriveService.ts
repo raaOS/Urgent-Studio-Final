@@ -41,14 +41,16 @@ export async function testGoogleDriveConnection(): Promise<{ success: boolean; m
         
         // Operasi sederhana untuk mengetes koneksi: mencoba mendapatkan metadata folder utama.
         // Ini adalah operasi read-only yang aman.
-        await drive.files.get({
+        const response = await drive.files.get({
             fileId: process.env.GOOGLE_DRIVE_FOLDER_ID!,
             fields: 'id, name', // Hanya meminta informasi dasar
         });
 
+        const folderName = response.data.name;
+
         return {
             success: true,
-            message: 'Koneksi ke Google Drive berhasil! Sistem siap membuat folder otomatis.',
+            message: `Koneksi ke Google Drive berhasil! Sistem terhubung ke folder utama Anda: "${folderName}".`,
         };
 
     } catch (error: any) {
