@@ -17,6 +17,8 @@ import {
   Lock,
   Workflow,
   Database,
+  BookOpen,
+  Briefcase,
 } from 'lucide-react';
 
 export type MenuItem = {
@@ -58,6 +60,20 @@ export const menuConfig: (MenuItem | MenuGroup)[] = [
     groupIcon: Palette,
     items: [
       { label: 'Brief & Status', href: '/panel/designer/briefs', icon: ClipboardList },
+    ],
+  },
+  {
+    groupLabel: 'RUANG EDUKASI',
+    groupIcon: BookOpen,
+    items: [
+      { label: 'Manajemen Kelas', href: '/panel/education/courses', icon: ClipboardList },
+    ],
+  },
+  {
+    groupLabel: 'RUANG LANGGANAN',
+    groupIcon: Briefcase,
+    items: [
+      { label: 'Manajemen Klien', href: '/panel/subscription/clients', icon: Users },
     ],
   },
   {
