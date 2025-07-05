@@ -13,7 +13,6 @@ export default function MigrationPage() {
     const [isLoading, setIsLoading] = React.useState(false);
     const [result, setResult] = React.useState<{ status: 'success' | 'error'; message: string } | null>(null);
     const { toast } = useToast();
-    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
     const handleMigration = async () => {
         if (!confirm("Apakah Anda yakin ingin memulai migrasi? Ini akan menyalin semua produk dari database lama ke database saat ini. Produk yang sudah ada dengan nama yang sama mungkin akan terduplikasi.")) {
@@ -32,7 +31,7 @@ export default function MigrationPage() {
         } catch (error) {
             const message = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
             setResult({ status: 'error', message: message });
-            toast({ variant: 'destructive', title: "Migrasi Gagal", description: message });
+            toast({ variant: 'destructive', title: "Gagal Migrasi", description: message });
         } finally {
             setIsLoading(false);
         }
@@ -54,19 +53,19 @@ export default function MigrationPage() {
                     <div className="flex items-center justify-center gap-4 text-center">
                         <div className="p-4 border rounded-lg bg-muted text-center">
                             <p className="font-semibold">Database Lama</p>
-                            <p className="text-sm font-code text-muted-foreground">ID: &lt;PROYEK_LAMA&gt;</p>
+                            <p className="text-sm font-code text-muted-foreground">ID: {'<PROYEK_LAMA>'}</p>
                         </div>
                         <ArrowRight className="h-8 w-8 text-primary" />
                          <div className="p-4 border-2 border-primary rounded-lg bg-primary/10 text-center">
                             <p className="font-semibold">Database Saat Ini</p>
-                            <p className="text-sm font-code text-muted-foreground">ID: {projectId}</p>
+                            <p className="text-sm font-code text-muted-foreground">ID: {process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}</p>
                         </div>
                     </div>
                     <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Perhatian!</AlertTitle>
                         <AlertDescription>
-                            Pastikan Anda sudah mengganti placeholder `<ID_PROYEK_LAMA_ANDA>` di dalam file `src/services/migrationService.ts`. Jika belum, migrasi akan gagal.
+                            Pastikan Anda sudah mengganti placeholder {'`<ID_PROYEK_LAMA_ANDA>`'} di dalam file `src/services/migrationService.ts`. Jika belum, migrasi akan gagal.
                         </AlertDescription>
                     </Alert>
                 </CardContent>
