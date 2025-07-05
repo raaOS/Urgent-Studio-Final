@@ -89,9 +89,8 @@ export async function getOrders(): Promise<Order[]> {
         const orderSnapshot = await getDocs(ordersCollection);
         return orderSnapshot.docs.map(toOrder);
     } catch (error) {
-        console.warn("Firebase Warning: Gagal mengambil pesanan:", error);
-        // Mengembalikan array kosong jika gagal, agar halaman tidak crash.
-        return [];
+        console.error("Gagal mengambil data pesanan:", error);
+        throw error;
     }
 }
 
@@ -153,9 +152,9 @@ export async function getWeeklyOrderCount(): Promise<number> {
     return snapshot.data().count;
 
   } catch (error) {
-    console.warn(`Firebase Warning: Gagal menghitung pesanan mingguan: ${JSON.stringify(error, null, 2)}`);
-    // Return 0 on error to avoid breaking quota logic
-    return 0;
+    console.error(`Firebase Warning: Gagal menghitung pesanan mingguan:`, error);
+    // Re-throw the error to be caught by the page
+    throw error;
   }
 }
 

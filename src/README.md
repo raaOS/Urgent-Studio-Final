@@ -20,12 +20,12 @@ Aplikasi tidak akan berfungsi dengan benar jika langkah ini dilewati.
 
 ## ⚠️ PENTING #2: Mengatasi Error Kritis (Database Tidak Ada atau Terkunci)
 
-Jika Anda melihat error `FAILED_PRECONDITION: ...database was deleted` atau `PERMISSION_DENIED` di log server, ini masalah konfigurasi Firebase yang umum.
+Jika Anda melihat error `FAILED_PRECONDITION: ...database was deleted` atau `PERMISSION_DENIED` di log server, ini masalah konfigurasi Firebase yang umum. **Aplikasi ini dirancang untuk menampilkan halaman error yang jelas jika masalah ini terjadi.**
 
 **Penyebab & Solusi:**
 Error `database was deleted` hampir selalu berarti Anda belum **membuat database** di dalam proyek Firebase Anda.
 
-1.  Buka **Firebase Console** dan pilih proyek Anda.
+1.  Buka **Firebase Console** dan pilih proyek Anda (misal: `artisant-5dmih`).
 2.  Di menu sebelah kiri, klik **Build > Firestore Database**.
 3.  Klik tombol besar **"Create database"**.
 4.  Pilih lokasi server (misal: `nam5 (us-central)`). Klik **Next**.
@@ -47,6 +47,81 @@ service cloud.firestore {
 Klik **Publish**.
 
 **Peringatan:** Aturan ini membuat data Anda bisa diakses oleh siapa saja. Ini aman untuk pengembangan, tetapi **WAJIB** diamankan sebelum aplikasi Anda diluncurkan ke publik. [Pelajari cara mengamankan data Anda di sini.](https://firebase.google.com/docs/firestore/security/get-started)
+
+---
+
+## 🗄️ PENTING #3: Panduan Memindahkan Data Firestore (Migrasi)
+
+Anda baru saja mengubah koneksi aplikasi ke proyek Firebase yang baru. Namun, **data (seperti produk, pesanan, pengguna) tidak ikut pindah secara otomatis**. Aplikasi Anda sekarang terhubung ke database yang kemungkinan besar masih kosong di proyek `artisant-5dmih`.
+
+Untuk memindahkan data dari proyek lama ke proyek baru, ikuti panduan ini.
+
+**Opsi 1: Rekreasi Manual (Direkomendasikan Jika Data Sedikit)**
+
+Jika Anda baru memiliki beberapa produk atau pengguna, cara termudah dan tercepat adalah dengan membuatnya kembali secara manual melalui **Panel Admin** Anda.
+
+1.  Pastikan Anda sudah menyelesaikan **PENTING #2** dan database Anda sudah aktif.
+2.  Jalankan aplikasi secara lokal (`npm run dev`).
+3.  Buka `/panel/owner/products`, `/panel/owner/users`, dll.
+4.  Buat ulang semua produk, pengguna, kupon, dan banner yang Anda butuhkan. Data ini akan langsung tersimpan di database proyek `artisant-5dmih` yang baru.
+
+**Opsi 2: Ekspor & Impor Otomatis (Untuk Data Banyak)**
+
+Metode ini lebih teknis tetapi dapat memindahkan semua data sekaligus. Anda memerlukan [Google Cloud SDK (gcloud)](https://cloud.google.com/sdk/docs/install) terpasang di komputer Anda.
+
+**Peringatan:** Proses ini memerlukan akun Firebase dengan paket **Blaze (Pay-as-you-go)**. Namun, biasanya tidak akan ada biaya jika penggunaan Anda masih di bawah kuota gratis.
+
+#### Langkah 1: Ekspor Data dari Proyek LAMA
+
+1.  Buka terminal atau command prompt Anda.
+2.  Atur `gcloud` untuk menunjuk ke proyek **LAMA** Anda (ganti `<ID_PROYEK_LAMA>`):
+    ```bash
+    gcloud config set project <ID_PROYEK_LAMA>
+    ```
+3.  Buat bucket penyimpanan untuk backup (pastikan lokasi bucket sama dengan lokasi Firestore Anda, misal: `nam1` atau `asia-southeast2`):
+    ```bash
+    gsutil mb -p <ID_PROYEK_LAMA> -l <LOKASI_FIRESTORE> gs://<ID_PROYEK_LAMA>.appspot.com
+    ```
+4.  Jalankan perintah ekspor. Ini akan menyimpan semua data Firestore Anda ke dalam bucket:
+    ```bash
+    gcloud firestore export gs://<ID_PROYEK_LAMA>.appspot.com/firestore-backup
+    ```
+
+#### Langkah 2: Impor Data ke Proyek BARU
+
+1.  Pastikan proyek BARU Anda (`artisant-5dmih`) sudah memiliki **database Firestore yang aktif**. Jika belum, ikuti **PENTING #2**.
+2.  Atur `gcloud` untuk menunjuk ke proyek **BARU** Anda:
+    ```bash
+    gcloud config set project artisant-5dmih
+    ```
+3.  Jalankan perintah impor. Ini akan menyalin data dari bucket proyek lama ke Firestore proyek baru Anda:
+    ```bash
+    gcloud firestore import gs://<ID_PROYEK_LAMA>.appspot.com/firestore-backup
+    ```
+
+Setelah proses impor selesai, database di proyek `artisant-5dmih` Anda akan berisi data yang sama persis dengan proyek lama Anda.
+
+---
+
+## 🛡️ PENTING #4: Strategi Anti-Gagal (Backup Data Anda!)
+
+Kekhawatiran Anda bahwa "jika terjadi crack, hilang semua" sangatlah wajar. Ini adalah pemikiran yang bagus tentang manajemen risiko. Mari kita perjelas bagaimana sistem ini dirancang untuk mencegah hal tersebut.
+
+Penting untuk dipahami bahwa **Kode Aplikasi** dan **Data Database** adalah dua hal yang terpisah:
+1.  **Kode Aplikasi (di Vercel):** Ini adalah "mesin" aplikasi Anda. Jika ada bug atau "crack" pada kode, kita bisa dengan mudah kembali ke versi sebelumnya yang stabil. Kode tidak akan hilang.
+2.  **Data Database (di Firebase):** Ini adalah aset Anda yang paling berharga (data produk, pesanan, pengguna). **Data ini tidak akan hilang hanya karena kode aplikasi error.**
+
+Risiko sebenarnya bukanlah pada kode yang "crack", tetapi pada keamanan dan integritas data itu sendiri. Oleh karena itu, langkah paling penting yang bisa Anda lakukan adalah **melakukan backup data secara rutin.**
+
+**Cara Melakukan Backup:**
+
+Anda bisa menggunakan fitur ekspor bawaan dari Google Cloud untuk menyimpan seluruh salinan database Firestore Anda. Proses ini sama persis dengan proses migrasi yang sudah dijelaskan di atas.
+
+1.  **Ikuti langkah-langkah di bagian "Langkah 1: Ekspor Data dari Proyek LAMA"** pada panduan migrasi di atas.
+2.  Gunakan ID proyek Anda saat ini (`artisant-5dmih`) sebagai sumbernya.
+3.  Simpan file hasil ekspor tersebut di tempat yang aman.
+
+Lakukan ini secara berkala (misalnya, setiap minggu) untuk memastikan Anda selalu punya salinan data yang aman.
 
 ---
 

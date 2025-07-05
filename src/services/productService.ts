@@ -45,10 +45,9 @@ export async function getProducts(): Promise<Product[]> {
     const productList = productSnapshot.docs.map(toProduct);
     return productList;
   } catch (error) {
-    console.warn("Firebase Warning: Gagal mengambil produk:", error);
-    // Return empty array on error to prevent crashes on the client-side.
-    // The calling page should handle this case.
-    return [];
+    console.error("Gagal mengambil produk dari Firestore:", error);
+    // Re-throw the error so the calling page can catch it and display a helpful message.
+    throw error;
   }
 }
 
@@ -64,8 +63,8 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
     const productList = productSnapshot.docs.map(toProduct);
     return productList;
   } catch (error) {
-    console.warn("Firebase Warning: Gagal mengambil produk berdasarkan ID:", error);
-    return [];
+    console.error("Firebase Warning: Gagal mengambil produk berdasarkan ID:", error);
+    throw error;
   }
 }
 
