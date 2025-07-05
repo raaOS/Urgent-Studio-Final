@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'eg9mp7d8pz2.exactdn.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   // Vercel Best Practice: Explicitly define public env variables.
