@@ -53,7 +53,7 @@ export default function MigrationPage() {
                     <div className="flex items-center justify-center gap-4 text-center">
                         <div className="p-4 border rounded-lg bg-muted text-center">
                             <p className="font-semibold">Database Lama</p>
-                            <p className="text-sm font-code text-muted-foreground">ID: {'<PROYEK_LAMA>'}</p>
+                            <p className="text-sm font-code text-muted-foreground">ID: {'database-urgent-studio'}</p>
                         </div>
                         <ArrowRight className="h-8 w-8 text-primary" />
                          <div className="p-4 border-2 border-primary rounded-lg bg-primary/10 text-center">
@@ -65,7 +65,7 @@ export default function MigrationPage() {
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Perhatian!</AlertTitle>
                         <AlertDescription>
-                            Pastikan Anda sudah mengganti placeholder {'`<ID_PROYEK_LAMA_ANDA>`'} di dalam file `src/services/migrationService.ts`. Jika belum, migrasi akan gagal.
+                           Pastikan Anda sudah mengatur variabel `OLD_FIREBASE_API_KEY` di file `.env` Anda dengan API Key dari proyek lama. Jika belum, migrasi akan gagal.
                         </AlertDescription>
                     </Alert>
                 </CardContent>

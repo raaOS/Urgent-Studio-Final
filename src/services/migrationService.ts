@@ -2,7 +2,7 @@
 'use server';
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, collection, getDocs, writeBatch, type Firestore, type DocumentData } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, writeBatch, type Firestore, type DocumentData, doc } from 'firebase/firestore';
 import { db as currentDb, isFirebaseConfigured as isCurrentDbConfigured } from '@/lib/firebase';
 
 // =================================================================================
@@ -10,7 +10,7 @@ import { db as currentDb, isFirebaseConfigured as isCurrentDbConfigured } from '
 // =================================================================================
 // Ganti nilai di bawah ini dengan kredensial dari PROYEK FIREBASE LAMA Anda.
 // Anda bisa menemukannya di Firebase Console > Project Settings > General.
-const OLD_PROJECT_ID = '<ID_PROYEK_LAMA_ANDA>'; // <-- GANTI INI
+const OLD_PROJECT_ID = 'database-urgent-studio'; // <-- INI SUDAH DIATUR
 
 const oldFirebaseConfig = {
   apiKey: process.env.OLD_FIREBASE_API_KEY, // Anda harus menambahkan ini ke .env
