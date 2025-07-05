@@ -18,7 +18,7 @@ const oldFirebaseConfig = {
 let oldApp: FirebaseApp | null = null;
 let oldDb: Firestore | null = null;
 
-const isOldDbConfigured = !!oldFirebaseConfig.apiKey; // Simplified check
+const isOldDbConfigured = !!oldFirebaseConfig.apiKey;
 
 if (isOldDbConfigured) {
     const oldAppName = 'oldProject';
@@ -37,7 +37,7 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
     return { success: false, count: 0, error: "Database tujuan (saat ini) tidak terkonfigurasi." };
   }
   if (!isOldDbConfigured || !oldDb) {
-    return { success: false, count: 0, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env. Harap periksa kembali." };
+    return { success: false, count: 0, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env." };
   }
 
   try {
@@ -52,9 +52,9 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
     const batch = writeBatch(currentDb!);
     let count = 0;
 
-    oldProductsSnapshot.forEach((productDoc) => { // FIX: Renamed 'doc' to 'productDoc' to avoid conflict
+    oldProductsSnapshot.forEach((productDoc) => {
       const productData = productDoc.data();
-      const newProductRef = doc(collection(currentDb!, 'products')); // Now this 'doc' refers to the imported function
+      const newProductRef = doc(collection(currentDb!, 'products'));
       batch.set(newProductRef, productData);
       count++;
     });
@@ -69,5 +69,55 @@ export async function migrateProductsFromOldProject(): Promise<{ success: boolea
     const message = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
     console.error("Gagal melakukan migrasi produk:", error);
     return { success: false, count: 0, error: message };
+  }
+}
+
+// Fungsi untuk memigrasi data lainnya (users, coupons, banners, promos)
+export async function migrateOtherDataFromOldProject(): Promise<{ success: boolean; results: Record<string, number>; error?: string }> {
+  if (!isCurrentDbConfigured) {
+    return { success: false, results: {}, error: "Database tujuan (saat ini) tidak terkonfigurasi." };
+  }
+  if (!isOldDbConfigured || !oldDb) {
+    return { success: false, results: {}, error: "Konfigurasi OLD_FIREBASE_API_KEY untuk proyek lama belum diatur di file .env." };
+  }
+  
+  const collectionsToMigrate = ['users', 'coupons', 'banners', 'promos'];
+  const results: Record<string, number> = {};
+  let totalMigrated = 0;
+
+  try {
+    const batch = writeBatch(currentDb!);
+
+    for (const collectionName of collectionsToMigrate) {
+      console.log(`Membaca koleksi '${collectionName}' dari proyek lama...`);
+      const oldCollection = collection(oldDb, collectionName);
+      const oldSnapshot = await getDocs(oldCollection);
+      
+      let count = 0;
+      oldSnapshot.forEach((docData) => {
+        const data = docData.data();
+        const newDocRef = doc(collection(currentDb!, collectionName));
+        batch.set(newDocRef, data);
+        count++;
+      });
+      results[collectionName] = count;
+      totalMigrated += count;
+      console.log(`Menemukan ${count} dokumen di koleksi '${collectionName}'.`);
+    }
+
+    if (totalMigrated > 0) {
+      console.log(`Menyimpan ${totalMigrated} total dokumen ke database baru...`);
+      await batch.commit();
+      console.log("Migrasi data lain selesai.");
+    } else {
+        console.log("Tidak ada data lain yang ditemukan untuk dimigrasi.");
+    }
+    
+    return { success: true, results };
+
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
+    console.error("Gagal melakukan migrasi data lain:", error);
+    return { success: false, results: {}, error: message };
   }
 }
