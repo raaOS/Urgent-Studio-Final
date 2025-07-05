@@ -94,6 +94,28 @@ Setelah proses impor selesai, database di proyek `artisant-5dmih` Anda akan beri
 
 ---
 
+## 🛡️ PENTING #4: Strategi Anti-Gagal (Backup Data Anda!)
+
+Kekhawatiran Anda bahwa "jika terjadi crack, hilang semua" sangatlah wajar. Ini adalah pemikiran yang bagus tentang manajemen risiko. Mari kita perjelas bagaimana sistem ini dirancang untuk mencegah hal tersebut.
+
+Penting untuk dipahami bahwa **Kode Aplikasi** dan **Data Database** adalah dua hal yang terpisah:
+1.  **Kode Aplikasi (di Vercel):** Ini adalah "mesin" aplikasi Anda. Jika ada bug atau "crack" pada kode, kita bisa dengan mudah kembali ke versi sebelumnya yang stabil. Kode tidak akan hilang.
+2.  **Data Database (di Firebase):** Ini adalah aset Anda yang paling berharga (data produk, pesanan, pengguna). **Data ini tidak akan hilang hanya karena kode aplikasi error.**
+
+Risiko sebenarnya bukanlah pada kode yang "crack", tetapi pada keamanan dan integritas data itu sendiri. Oleh karena itu, langkah paling penting yang bisa Anda lakukan adalah **melakukan backup data secara rutin.**
+
+**Cara Melakukan Backup:**
+
+Anda bisa menggunakan fitur ekspor bawaan dari Google Cloud untuk menyimpan seluruh salinan database Firestore Anda. Proses ini sama persis dengan proses migrasi yang sudah dijelaskan di atas.
+
+1.  **Ikuti langkah-langkah di bagian "Langkah 1: Ekspor Data dari Proyek LAMA"** pada panduan migrasi di atas.
+2.  Gunakan ID proyek Anda saat ini (`artisant-5dmih`) sebagai sumbernya.
+3.  Simpan file hasil ekspor tersebut di tempat yang aman.
+
+Lakukan ini secara berkala (misalnya, setiap minggu) untuk memastikan Anda selalu punya salinan data yang aman.
+
+---
+
 ## 📝 Checklist Kualitas Proyek
 
 Setiap kali perintah `CEK` digunakan, AI akan melakukan tinjauan berdasarkan poin-poin berikut untuk memastikan aplikasi andal dan profesional.
